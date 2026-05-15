@@ -1,0 +1,120 @@
+{
+  "project": "鞋服零售利润测算系统",
+  "scenario": "老板总目标 → 基线预估 → 门店承压分配 → 利润测算 → 风险评估",
+  "date": "2026-05-15",
+  "collaboration_model": "hub-spoke",
+  "tech_stack": {
+    "language": "Python 3.13",
+    "web_framework": "FastAPI",
+    "frontend": "React + Vite",
+    "data_source": "StarRocks (MySQL协议)",
+    "forecasting": "statsmodels + Prophet",
+    "testing": "pytest (159 tests)"
+  },
+  "core_logic": {
+    "target": "老板设定公司总利润目标 P_total",
+    "baseline": "各门店历史月度数据 → 基线收入 B_i (BaselineAgent)",
+    "allocation": "缺口 G = P_total - ΣB_i，按门店能力权重分配到各店 (AllocationAgent)",
+    "profit": "单店利润 = T_i - 真实成本结构，公司利润 = Σ各店利润 (ProfitAgent + CostEstimator)",
+    "risk": "目标可达性 + 承压均匀度 + 高风险标注 + 情景模拟 (RiskAgent)",
+    "constraint": "T_i ≥ B_i × 80%（保底线）",
+    "cost_data": "ads_fin_fact_day_storeloss_pp 真实损益数据 → CostEstimator.from_store_loss_data()"
+  },
+  "agents": {
+    "orchestrator": {
+      "role": "项目统筹 Agent",
+      "en_name": "Orchestrator",
+      "file": "src/agents/orchestrator.py",
+      "class": "Orchestrator",
+      "description": "接收老板总目标，协调各 Agent 按序执行，汇总交付最终结果",
+      "input": "老板总利润目标 (total_target)",
+      "output": "PipelineResult (含 data/baseline/allocation/profit/risk 全阶段结果)",
+      "phases": [
+        "Phase 1: 数据采集 (DataAgent)",
+        "Phase 2: 基线预估 (BaselineAgent)",
+        "Phase 3: 承压分配 (AllocationAgent)",
+        "Phase 4: 利润测算 (ProfitAgent + CostEstimator)",
+        "Phase 5: 风险评估 (RiskAgent)"
+      ],
+      "level": "L1 (Hub)"
+    },
+    "data_agent": {
+      "role": "数据采集 Agent",
+      "en_name": "DataAgent",
+      "file": "src/agents/data_agent.py",
+      "class": "DataAgent",
+      "description": "从 StarRocks/Mock 采集门店、销售、月度指标、损益等数据",
+      "input": "数据源配置 (adapter: mock/starrocks)",
+      "output": "DataCollectionResult (stores/daily_sales/monthly_metrics/store_loss/cost_structure)",
+      "data_sources": [
+        "dws_pub.dws_dim_org_allinfo — 门店主数据",
+        "proj_facana.dwd_f04_dayone_countbase_pp_new — 日损益表",
+        "proj_facana.ads_fin_fact_day_storeloss_pp — 门店日损益(多口径)",
+        "dws_pub.dws_fact_day_org_target_cost — 日目标数据",
+        "dws_pub.dws_dim_org_on_off — 开关状态"
+      ],
+      "level": "L2 (Spoke)"
+    },
+    "baseline_agent": {
+      "role": "基线预估 Agent",
+      "en_name": "BaselineAgent",
+      "file": "src/agents/baseline_agent.py",
+      "class": "BaselineAgent",
+      "description": "根据门店月度历史数据，预估每家店的自然收入能力（基线）",
+      "input": "月度指标 (monthly_metrics)",
+      "output": "BaselineResult (baselines: {store_code: baseline_value})",
+      "level": "L2 (Spoke)"
+    },
+    "allocation_agent": {
+      "role": "门店承压分配 Agent",
+      "en_name": "AllocationAgent",
+      "file": "src/agents/allocation_agent.py",
+      "class": "AllocationAgent",
+      "description": "将老板总目标按门店能力权重分配到各店，强店多扛、弱店少扛、保底线",
+      "input": "老板总目标 + 各店基线 + 门店画像",
+      "output": "AllocationResult (plan.allocations: {store_code: Allocation})",
+      "allocation_rule": {
+        "formula": "T_i = B_i + G × W_i / ΣW_i",
+        "gap": "G = P_total - ΣB_i",
+        "weight_factors": ["历史利润", "坪效", "商圈等级", "门店面积", "增长趋势"],
+        "floor": "T_i ≥ B_i × 80%"
+      },
+      "level": "L2 (Spoke)"
+    },
+    "profit_agent": {
+      "role": "利润测算 Agent",
+      "en_name": "ProfitAgent",
+      "file": "src/agents/profit_agent.py",
+      "class": "ProfitAgent",
+      "description": "各店分配目标 - 真实成本结构 = 单店利润，汇总 = 公司利润",
+      "input": "各店分配目标 + 基线收入 + 真实成本结构(cost_structures)",
+      "output": "ProfitResult (summary/pnl_table/comparison/region_drill_down/type_drill_down)",
+      "cost_source": "CostEstimator.from_store_loss_data() — 从 ads_fin_fact_day_storeloss_pp 构建真实成本",
+      "level": "L2 (Spoke)"
+    },
+    "risk_agent": {
+      "role": "风险评估 Agent",
+      "en_name": "RiskAgent",
+      "file": "src/agents/risk_agent.py",
+      "class": "RiskAgent",
+      "description": "评估各店目标可达性，标注高风险门店，承压均匀度检查，情景模拟",
+      "input": "分配结果 + 利润测算结果 + 门店画像",
+      "output": "RiskResult (summary_dict/recommendations)",
+      "level": "L2 (Spoke)"
+    }
+  },
+  "api_endpoints": {
+    "pipeline": "POST /api/v1/pipeline/run — 一键跑通全流程",
+    "profit_calculate": "POST /api/v1/profit/calculate — 利润测算",
+    "profit_region": "GET /api/v1/profit/drill-down/region — 按区域下钻",
+    "profit_type": "GET /api/v1/profit/drill-down/type — 按门店类型下钻",
+    "health": "GET /api/v1/pipeline/health — 健康检查"
+  },
+  "output_files": {
+    "org_chart": "docs/architecture/org_chart.mmd",
+    "swimlane": "docs/architecture/swimlane.mmd",
+    "dashboard": "docs/architecture/index.html",
+    "implementation_plan": "docs/architecture/implementation_plan.html",
+    "agent_config": "docs/architecture/agents.json"
+  }
+}

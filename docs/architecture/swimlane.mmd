@@ -1,0 +1,61 @@
+sequenceDiagram
+    actor Boss as 👑 公司老板
+    participant PM as 👔 项目统筹<br/>Orchestrator
+    participant DC as 🔍 数据采集<br/>DataAgent
+    participant BL as 📊 基线预估<br/>BaselineAgent
+    participant PA as 🏪 承压分配<br/>AllocationAgent
+    participant CE as 📐 成本预估<br/>CostEstimator
+    participant PC as 💰 利润测算<br/>ProfitAgent
+    participant RA as 🛡️ 风险评估<br/>RiskAgent
+
+    Boss->>PM: 设定公司总利润目标
+
+    rect rgb(255, 248, 230)
+    Note over PM,DC: Phase 1 · 数据采集
+    PM->>DC: 采集全量数据
+    DC->>DC: fetch_stores() 门店主数据
+    DC->>DC: fetch_monthly_metrics() 月度指标
+    DC->>DC: fetch_store_loss() 门店日损益
+    DC->>DC: fetch_daily_target_cost() 日目标
+    DC->>DC: fetch_switch_status() 开关状态
+    DC-->>PM: DataCollectionResult
+    end
+
+    rect rgb(232, 245, 253)
+    Note over PM,BL: Phase 2 · 基线预估
+    PM->>BL: monthly_metrics
+    BL->>BL: 时间序列分析
+    BL->>BL: 异常值剔除 + 季节性调整
+    BL-->>PM: BaselineResult (各店基线 B_i)
+    end
+
+    rect rgb(255, 235, 235)
+    Note over PM,PA: Phase 3 · 承压分配
+    PM->>PA: total_target + baselines + store_profiles
+    PA->>PA: 计算缺口 G = P_total - ΣB_i
+    PA->>PA: 按 5 维权重分配承压额
+    PA->>PA: 约束检查 T_i ≥ B_i × 80%
+    PA-->>PM: AllocationResult (各店目标 T_i)
+    end
+
+    rect rgb(232, 250, 238)
+    Note over PM,PC: Phase 4 · 利润测算
+    PM->>CE: store_loss_df + targets
+    CE->>CE: from_store_loss_data() 构建真实成本
+    CE-->>PM: cost_structures (真实数据)
+    PM->>PC: targets + baselines + cost_structures
+    PC->>PC: 单店利润 = T_i - 真实成本
+    PC->>PC: P&L 表 + 区域/类型下钻
+    PC-->>PM: ProfitResult
+    end
+
+    rect rgb(243, 232, 255)
+    Note over PM,RA: Phase 5 · 风险评估
+    PM->>RA: allocation + profit + store_profiles
+    RA->>RA: 目标可达性评估
+    RA->>RA: 承压均匀度检查
+    RA->>RA: 高风险门店标注
+    RA-->>PM: RiskResult (风险报告)
+    end
+
+    PM-->>Boss: 交付：分配方案 + 利润测算 + P&L + 风险预警

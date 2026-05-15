@@ -1,0 +1,35 @@
+graph TD
+    PM["👔 项目统筹 Agent<br/>Orchestrator"]
+    DC["🔍 数据采集 Agent<br/>DataAgent"]
+    BL["📊 基线预估 Agent<br/>BaselineAgent"]
+    PA["🏪 门店承压分配 Agent<br/>AllocationAgent"]
+    PC["💰 利润测算 Agent<br/>ProfitAgent"]
+    RA["🛡️ 风险评估 Agent<br/>RiskAgent"]
+    CE["📐 成本预估器<br/>CostEstimator"]
+
+    PM -->|"Phase 1: 采集指令"| DC
+    PM -->|"Phase 2: 预估任务"| BL
+    PM -->|"Phase 3: 分配任务"| PA
+    PM -->|"Phase 4: 测算任务"| PC
+    PM -->|"Phase 5: 评估任务"| RA
+
+    DC -->|"门店历史数据"| BL
+    DC -->|"门店画像数据"| PA
+    DC -->|"store_loss 损益数据"| CE
+
+    BL -->|"各店基线预估 B_i"| PA
+    BL -->|"基线收入"| PC
+
+    PA -->|"各店分配目标 T_i"| PC
+
+    CE -->|"真实成本结构"| PC
+
+    PC -->|"测算结果"| RA
+
+    style PM fill:#4A90D9,color:#fff,stroke:#2C5F8A
+    style DC fill:#FFA94D,color:#fff,stroke:#CC7A30
+    style BL fill:#7B68EE,color:#fff,stroke:#5A4FB8
+    style PA fill:#FF6B6B,color:#fff,stroke:#CC4444
+    style PC fill:#51CF66,color:#fff,stroke:#2B8A3E
+    style RA fill:#845EF7,color:#fff,stroke:#6B3FD4
+    style CE fill:#20C997,color:#fff,stroke:#12B886

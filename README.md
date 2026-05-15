@@ -32,28 +32,44 @@ python run.py
 
 API 文档: http://localhost:8000/docs
 
+## 架构文档
+
+详见 [`docs/architecture/`](docs/architecture/)：
+
+- [Agent 组织架构图](docs/architecture/org_chart.mmd) — 6 个 Agent 的协作关系
+- [全流程泳道图](docs/architecture/swimlane.mmd) — 5 个 Phase 的执行时序
+- [Agent 配置](docs/architecture/agents.json) — 各 Agent 角色、输入输出、代码位置
+- [多 Agent 协作方案](docs/architecture/index.html) — 汇报用 HTML（浏览器打开）
+- [实施方案](docs/architecture/implementation_plan.html) — 20 周路线图 + 团队/成本
+
 ## 项目结构
 
 ```
 profit-forecast/
 ├── src/
-│   ├── agents/           # Agent 编排层（Phase 5）
+│   ├── agents/           # Agent 编排层（Orchestrator + 5 个专业 Agent）
 │   ├── allocation/       # 承压分配算法（Phase 3）
 │   ├── api/              # FastAPI 路由
 │   │   └── routes/       # API 端点
 │   ├── baseline/         # 基线预估（Phase 2）
 │   ├── core/             # 配置、日志
 │   ├── data/
-│   │   ├── collectors/   # 数据采集器（DataWorks/Mock/Excel）
+│   │   ├── collectors/   # 数据采集器（StarRocks/Mock/DataWorks）
 │   │   ├── validators/   # 数据校验和质量检查
 │   │   └── storage/      # 存储层
 │   ├── db/               # SQLAlchemy 模型和连接
 │   ├── forecasting/      # 预测模型（Phase 2）
-│   ├── profit/           # 利润测算（Phase 4）
+│   ├── profit/           # 利润测算（Phase 4）+ 成本预估器
 │   └── risk/             # 风险评估（Phase 4）
+├── docs/
+│   ├── architecture/     # 架构文档（Agent 图/泳道图/方案 HTML）
+│   └── data_requirements.md
+├── scripts/
+│   ├── etl_sql/          # 8 个 ETL SQL 脚本（StarRocks 数据导出）
+│   ├── run_real_profit.py # 真实数据利润测算脚本
+│   └── export_to_csv.py  # 数据导出脚本
 ├── docker/               # Docker Compose 配置
-├── scripts/              # 启动脚本
-├── tests/                # 测试
+├── tests/                # 测试（159 个）
 ├── .env.example          # 环境变量模板
 ├── pyproject.toml        # Python 项目配置
 └── run.py                # 应用入口

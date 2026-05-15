@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>鞋服零售利润测算系统 — 已实施架构文档</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
+  .banner { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #fff; padding: 48px 40px; text-align: center; }
+  .banner h1 { font-size: 32px; margin: 0 0 8px; letter-spacing: 2px; }
+  .banner .sub { font-size: 16px; opacity: 0.8; margin-bottom: 4px; }
+  .banner .meta { font-size: 13px; opacity: 0.5; margin-top: 12px; }
+  .banner .tags { margin-top: 16px; }
+  .banner .tag { display: inline-block; background: rgba(255,255,255,0.15); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin: 0 4px; }
+  .banner .tag-done { background: rgba(47,158,68,0.6); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); padding: 28px 32px; margin-bottom: 24px; }
+  .card h2 { color: #1a1a2e; font-size: 20px; border-left: 4px solid #4A90D9; padding-left: 12px; margin: 0 0 20px; }
+  .card h3 { color: #2c3e50; font-size: 16px; margin: 20px 0 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: #f8f9fa; color: #555; font-weight: 600; text-align: left; padding: 10px 14px; border-bottom: 2px solid #e9ecef; font-size: 13px; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+  tr:hover td { background: #fafbfc; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; color: #fff; font-weight: 500; }
+  .badge-blue { background: #4A90D9; }
+  .badge-purple { background: #7B68EE; }
+  .badge-red { background: #FF6B6B; }
+  .badge-green { background: #51CF66; }
+  .badge-orange { background: #FFA94D; }
+  .badge-violet { background: #845EF7; }
+  .badge-gray { background: #868e96; }
+  .badge-teal { background: #20C997; }
+  .formula { background: #f0f7ff; border-left: 4px solid #4A90D9; padding: 16px 20px; margin: 16px 0; font-size: 14px; line-height: 2; border-radius: 0 8px 8px 0; }
+  .formula strong { color: #1a1a2e; }
+  .flow { margin: 16px 0; }
+  .flow-step { display: flex; align-items: flex-start; margin: 12px 0; font-size: 14px; }
+  .flow-step .num { width: 32px; height: 32px; border-radius: 50%; background: #4A90D9; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; margin-right: 14px; flex-shrink: 0; }
+  .flow-step .content { flex: 1; }
+  .flow-step .title { font-weight: 600; color: #1a1a2e; }
+  .flow-step .desc { color: #555; margin-top: 2px; font-size: 13px; line-height: 1.6; }
+  .mermaid { display: flex; justify-content: center; margin: 20px 0; }
+  .hl { background: #fff3cd; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 16px 0; }
+  .metric-card { background: #f8f9fa; border-radius: 8px; padding: 16px; text-align: center; }
+  .metric-card .label { font-size: 12px; color: #868e96; margin-bottom: 4px; }
+  .metric-card .value { font-size: 24px; font-weight: 700; color: #1a1a2e; }
+  .metric-card .unit { font-size: 12px; color: #868e96; }
+  .vs-table td:first-child { font-weight: 600; color: #4A90D9; width: 120px; }
+  .risk-high { color: #e03131; font-weight: 600; }
+  .risk-mid { color: #f59f00; font-weight: 600; }
+  .risk-low { color: #2f9e44; font-weight: 600; }
+  .footer { text-align: center; padding: 32px; color: #adb5bd; font-size: 12px; }
+  .check-list { list-style: none; padding: 0; margin: 12px 0; }
+  .check-list li { padding: 4px 0; font-size: 14px; color: #333; }
+  .check-list li::before { content: "✅ "; }
+  .code-block { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 12px 0; }
+  .code-block .comment { color: #6c7086; }
+  .code-block .keyword { color: #cba6f7; }
+  .code-block .string { color: #a6e3a1; }
+  .code-block .func { color: #89b4fa; }
+  .status-done { display: inline-block; background: #d3f9d8; color: #2b8a3e; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<!-- ==================== Banner ==================== -->
+<div class="banner">
+  <h1>鞋服零售利润测算系统 — 多 Agent 智能协作架构</h1>
+  <div class="sub">老板总目标 → 基线预估 → 门店承压分配 → 利润测算 → 风险评估</div>
+  <div class="tags">
+    <span class="tag tag-done">已实施</span>
+    <span class="tag">基线预估</span>
+    <span class="tag">承压分配</span>
+    <span class="tag">利润测算</span>
+    <span class="tag">真实损益数据</span>
+    <span class="tag">StarRocks</span>
+  </div>
+  <div class="meta">日期：2026-05-15 &nbsp;|&nbsp; 版本：v2.0（已实施版）&nbsp;|&nbsp; 测试：159 通过</div>
+</div>
+
+<div class="container">
+
+<!-- ==================== 1. 系统概览 ==================== -->
+<div class="card">
+  <h2>一、系统概览</h2>
+
+  <h3>1.1 核心指标</h3>
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="label">Agent 数量</div>
+      <div class="value">6</div>
+      <div class="unit">1 Hub + 5 Spoke</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">测试覆盖</div>
+      <div class="value">159</div>
+      <div class="unit">单元测试全部通过</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">API 端点</div>
+      <div class="value">5</div>
+      <div class="unit">FastAPI 自动文档</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">数据源表</div>
+      <div class="value">7</div>
+      <div class="unit">StarRocks 实时查询</div>
+    </div>
+  </div>
+
+  <h3>1.2 技术栈（已实施）</h3>
+  <div class="table-wrap">
+  <table>
+    <tr><th>层级</th><th>选型</th><th>说明</th></tr>
+    <tr><td><span class="badge badge-blue">语言</span></td><td>Python 3.13</td><td>主语言，数据处理 + Agent 编排</td></tr>
+    <tr><td><span class="badge badge-green">Web 框架</span></td><td>FastAPI + Uvicorn</td><td>异步 API，自动生成 OpenAPI 文档</td></tr>
+    <tr><td><span class="badge badge-purple">前端</span></td><td>React + Vite</td><td>SPA 前端，端口 3000</td></tr>
+    <tr><td><span class="badge badge-orange">数据源</span></td><td>StarRocks（MySQL 协议）</td><td>OLAP 实时查询，7 张源表</td></tr>
+    <tr><td><span class="badge badge-violet">预测模型</span></td><td>statsmodels + Prophet</td><td>时间序列基线预估</td></tr>
+    <tr><td><span class="badge badge-teal">成本数据</span></td><td>ads_fin_fact_day_storeloss_pp</td><td>门店日损益，多口径（业绩/返利/预算/同期）</td></tr>
+    <tr><td><span class="badge badge-gray">测试</span></td><td>pytest + pytest-asyncio</td><td>159 个测试，asyncio_mode=auto</td></tr>
+  </table>
+  </div>
+
+  <h3>1.3 项目结构</h3>
+  <div class="code-block">
+profit-forecast/
+├── src/
+│   ├── agents/           <span class="comment"># Agent 编排层</span>
+│   │   ├── orchestrator.py      <span class="comment"># 项目统筹 (Hub)</span>
+│   │   ├── data_agent.py        <span class="comment"># 数据采集</span>
+│   │   ├── baseline_agent.py    <span class="comment"># 基线预估</span>
+│   │   ├── allocation_agent.py  <span class="comment"># 承压分配</span>
+│   │   ├── profit_agent.py      <span class="comment"># 利润测算</span>
+│   │   └── risk_agent.py        <span class="comment"># 风险评估</span>
+│   ├── profit/           <span class="comment"># 利润计算引擎</span>
+│   │   ├── profit_calculator.py <span class="comment"># 核心计算器 + StoreProfit</span>
+│   │   ├── cost_estimator.py    <span class="comment"># 成本预估（真实/默认）</span>
+│   │   └── profit_report.py     <span class="comment"># P&L 报告生成</span>
+│   ├── allocation/       <span class="comment"># 承压分配算法</span>
+│   ├── baseline/         <span class="comment"># 基线预估</span>
+│   ├── risk/             <span class="comment"># 风险评估</span>
+│   ├── data/collectors/  <span class="comment"># 数据采集器</span>
+│   │   ├── starrocks_collector.py <span class="comment"># StarRocks（1084 行）</span>
+│   │   └── mock_collector.py      <span class="comment"># Mock 数据</span>
+│   └── api/routes/       <span class="comment"># API 端点</span>
+├── docs/architecture/    <span class="comment"># 架构文档</span>
+├── scripts/              <span class="comment"># ETL + 数据脚本</span>
+│   └── etl_sql/          <span class="comment"># 8 个 SQL 脚本</span>
+└── tests/                <span class="comment"># 159 个测试</span>
+  </div>
+</div>
+
+<!-- ==================== 2. Agent 架构 ==================== -->
+<div class="card">
+  <h2>二、Agent 架构</h2>
+
+  <h3>2.1 组织架构（Hub-Spoke 模型）</h3>
+  <div class="mermaid">
+graph TD
+    PM["👔 项目统筹 Agent<br/>Orchestrator"]
+    DC["🔍 数据采集 Agent<br/>DataAgent"]
+    BL["📊 基线预估 Agent<br/>BaselineAgent"]
+    PA["🏪 门店承压分配 Agent<br/>AllocationAgent"]
+    PC["💰 利润测算 Agent<br/>ProfitAgent"]
+    RA["🛡️ 风险评估 Agent<br/>RiskAgent"]
+    CE["📐 成本预估器<br/>CostEstimator"]
+
+    PM -->|"Phase 1"| DC
+    PM -->|"Phase 2"| BL
+    PM -->|"Phase 3"| PA
+    PM -->|"Phase 4"| PC
+    PM -->|"Phase 5"| RA
+
+    DC -->|"历史数据"| BL
+    DC -->|"画像数据"| PA
+    DC -->|"store_loss"| CE
+    BL -->|"基线 B_i"| PA
+    BL -->|"基线收入"| PC
+    PA -->|"目标 T_i"| PC
+    CE -->|"真实成本"| PC
+    PC -->|"测算结果"| RA
+
+    style PM fill:#4A90D9,color:#fff,stroke:#2C5F8A
+    style DC fill:#FFA94D,color:#fff,stroke:#CC7A30
+    style BL fill:#7B68EE,color:#fff,stroke:#5A4FB8
+    style PA fill:#FF6B6B,color:#fff,stroke:#CC4444
+    style PC fill:#51CF66,color:#fff,stroke:#2B8A3E
+    style RA fill:#845EF7,color:#fff,stroke:#6B3FD4
+    style CE fill:#20C997,color:#fff,stroke:#12B886
+  </div>
+
+  <h3>2.2 各 Agent 详细职责</h3>
+  <div class="table-wrap">
+  <table>
+    <tr>
+      <th style="width:160px">Agent</th>
+      <th style="width:140px">代码文件</th>
+      <th>职责</th>
+      <th style="width:200px">输入 → 输出</th>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">👔 项目统筹</span></td>
+      <td><code>orchestrator.py</code></td>
+      <td>
+        · 接收老板总利润目标<br>
+        · 按 Phase 1→5 协调各 Agent<br>
+        · 构建 cost_structures（真实成本）<br>
+        · 汇总 PipelineResult 交付
+      </td>
+      <td>total_target → PipelineResult</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-orange">🔍 数据采集</span></td>
+      <td><code>data_agent.py</code></td>
+      <td>
+        · 从 StarRocks 采集 7 张源表数据<br>
+        · 门店主数据、月度指标、日损益<br>
+        · 日目标、开关状态、成本明细<br>
+        · 数据质量检查
+      </td>
+      <td>adapter → DataCollectionResult</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-purple">📊 基线预估</span></td>
+      <td><code>baseline_agent.py</code></td>
+      <td>
+        · 对每家门店进行时间序列分析<br>
+        · 异常值剔除 + 季节性调整<br>
+        · 输出各店自然收入能力
+      </td>
+      <td>monthly_metrics → BaselineResult</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-red">🏪 承压分配</span></td>
+      <td><code>allocation_agent.py</code></td>
+      <td>
+        · 计算目标缺口 G = P<sub>total</sub> - ΣB<sub>i</sub><br>
+        · 5 维权重模型分配承压额<br>
+        · <span class="hl">强店多扛、弱店少扛、保底线</span><br>
+        · 约束 T<sub>i</sub> ≥ B<sub>i</sub> × 80%
+      </td>
+      <td>target + baselines + profiles → AllocationResult</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-green">💰 利润测算</span></td>
+      <td><code>profit_agent.py</code></td>
+      <td>
+        · 单店利润 = T<sub>i</sub> - 真实成本结构<br>
+        · P&L 利润表（人工/租金/营销/物流等）<br>
+        · 区域/门店类型下钻分析<br>
+        · Top/Bottom 门店排行
+      </td>
+      <td>targets + cost_structures → ProfitResult</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-teal">📐 成本预估</span></td>
+      <td><code>cost_estimator.py</code></td>
+      <td>
+        · 从 ads_fin_fact_day_storeloss_pp 构建真实成本<br>
+        · 按月汇总取均值（最近 N 月）<br>
+        · COGS/人工/租金/营销/物流/折旧<br>
+        · 无数据门店降级到默认比例
+      </td>
+      <td>store_loss_df → cost_structures</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-violet">🛡️ 风险评估</span></td>
+      <td><code>risk_agent.py</code></td>
+      <td>
+        · 目标可达性评估<br>
+        · 承压均匀度检查<br>
+        · 高风险门店标注<br>
+        · 输出建议措施
+      </td>
+      <td>allocation + profit → RiskResult</td>
+    </tr>
+  </table>
+  </div>
+</div>
+
+<!-- ==================== 3. 数据流 ==================== -->
+<div class="card">
+  <h2>三、数据流（已实施）</h2>
+
+  <h3>3.1 核心数据管道</h3>
+  <div class="code-block">
+<span class="keyword">StarRocks 数据源</span>
+    │
+    ├── dws_pub.dws_dim_org_allinfo          <span class="comment">→ 门店主数据</span>
+    ├── proj_facana.dwd_f04_dayone_countbase_pp_new  <span class="comment">→ 月度指标/成本结构</span>
+    ├── proj_facana.ads_fin_fact_day_storeloss_pp    <span class="comment">→ 门店日损益 ⭐核心</span>
+    ├── dws_pub.dws_fact_day_org_target_cost  <span class="comment">→ 日目标数据</span>
+    └── dws_pub.dws_dim_org_on_off            <span class="comment">→ 开关状态</span>
+    │
+    ▼ <span class="func">DataAgent.collect()</span>
+    │
+    ▼ DataCollectionResult
+    │   .stores / .monthly_metrics / .store_loss / ...
+    │
+    ├──▶ <span class="func">BaselineAgent.forecast()</span>     → 基线 B_i
+    ├──▶ <span class="func">AllocationAgent.allocate()</span>   → 目标 T_i
+    │
+    ▼ <span class="func">CostEstimator.from_store_loss_data()</span>
+    │   store_loss_df → cost_structures (真实成本)
+    │
+    ▼ <span class="func">ProfitAgent.calculate(cost_structures=...)</span>
+    │   → ProfitResult
+    │       .summary (门店明细)
+    │       .pnl_table (P&L 利润表)
+    │       .comparison (基线对比)
+    │       .region_drill_down (区域下钻)
+    │       .type_drill_down (类型下钻)
+    │
+    ▼ <span class="func">RiskAgent.assess()</span>
+        → RiskResult
+            .summary_dict (风险汇总)
+            .recommendations (建议措施)
+  </div>
+
+  <h3>3.2 真实成本数据路径</h3>
+  <div class="formula">
+    <strong>数据源</strong>：<code>proj_facana.ads_fin_fact_day_storeloss_pp</code>（门店日损益表）<br>
+    <strong>口径</strong>：<code>d1_pf_</code>（业绩口径-地区版）为默认，另有 d2_（返利）、d4_（预算）、d1t_（同期）<br>
+    <strong>处理</strong>：按门店按月汇总日数据，取最近 3 月均值<br>
+    <strong>成本拆分</strong>：采购成本率 + 人工(工资+社保) + 租金物业 + 营销(商场费) + 物流(快递) + 折旧(装修) + 其他<br>
+    <strong>降级</strong>：无损益数据的门店自动使用默认比例（COGS 45%、人工 10%、租金 5%...）<br>
+    <strong>标记</strong>：<code>StoreProfit.data_source = "real" | "default"</code>
+  </div>
+</div>
+
+<!-- ==================== 4. 承压分配方法论 ==================== -->
+<div class="card">
+  <h2>四、承压分配方法论</h2>
+
+  <h3>4.1 分配公式</h3>
+  <div class="formula">
+    <strong>目标缺口</strong>：G = P<sub>total</sub> - ΣB<sub>i</sub>（老板总目标 - 各店基线汇总）<br>
+    <strong>门店权重</strong>：W<sub>i</sub> = α×历史利润归一化 + β×坪效归一化 + γ×商圈系数 + δ×面积归一化 + ε×增长趋势<br>
+    <strong>承压额</strong>：Δ<sub>i</sub> = G × W<sub>i</sub> / ΣW<sub>i</sub><br>
+    <strong>分配目标</strong>：T<sub>i</sub> = B<sub>i</sub> + Δ<sub>i</sub><br>
+    <strong>保底约束</strong>：T<sub>i</sub> ≥ B<sub>i</sub> × 80%（防止过度施压）<br>
+    <strong>权重默认值</strong>：α=0.35, β=0.25, γ=0.20, δ=0.10, ε=0.10
+  </div>
+
+  <h3>4.2 权重因子</h3>
+  <div class="table-wrap">
+  <table>
+    <tr><th>维度</th><th>权重</th><th>数据来源</th><th>业务含义</th></tr>
+    <tr><td><span class="badge badge-blue">历史利润</span></td><td>35%</td><td>月度指标聚合</td><td>能力越强，承担越多</td></tr>
+    <tr><td><span class="badge badge-green">坪效水平</span></td><td>25%</td><td>销售额 / 面积</td><td>高坪效 = 更大提升空间</td></tr>
+    <tr><td><span class="badge badge-orange">商圈等级</span></td><td>20%</td><td>门店主数据</td><td>A 级商圈承压上限更高</td></tr>
+    <tr><td><span class="badge badge-purple">门店面积</span></td><td>10%</td><td>门店主数据</td><td>大面积门店容量更大</td></tr>
+    <tr><td><span class="badge badge-red">增长趋势</span></td><td>10%</td><td>近 3 月同比</td><td>上升期门店可多承担</td></tr>
+  </table>
+  </div>
+</div>
+
+<!-- ==================== 5. 风险评估 ==================== -->
+<div class="card">
+  <h2>五、风险评估框架</h2>
+
+  <h3>5.1 评估维度</h3>
+  <div class="table-wrap">
+  <table>
+    <tr><th>评估维度</th><th>指标</th><th>低风险</th><th>中风险</th><th>高风险</th></tr>
+    <tr><td>目标可达性</td><td>分配目标 / 基线</td><td class="risk-low">≤ 130%</td><td class="risk-mid">130%-150%</td><td class="risk-high">> 150%</td></tr>
+    <tr><td>承压均匀度</td><td>标准差 / 均值</td><td class="risk-low">< 20%</td><td class="risk-mid">20%-30%</td><td class="risk-high">> 30%</td></tr>
+    <tr><td>保底线覆盖</td><td>低于基线 80% 的门店数</td><td class="risk-low">0 家</td><td class="risk-mid">-</td><td class="risk-high">≥ 1 家</td></tr>
+    <tr><td>新店承压</td><td>新店承压系数</td><td class="risk-low">× 0.7</td><td class="risk-mid">-</td><td class="risk-high">> × 1.0</td></tr>
+    <tr><td>季节性风险</td><td>淡季承压上浮</td><td class="risk-low">≤ 10%</td><td class="risk-mid">10%-20%</td><td class="risk-high">> 20%</td></tr>
+  </table>
+  </div>
+</div>
+
+<!-- ==================== 6. API 端点 ==================== -->
+<div class="card">
+  <h2>六、API 端点（已实施）</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>方法</th><th>路径</th><th>说明</th><th>数据来源</th></tr>
+    <tr>
+      <td><span class="badge badge-green">POST</span></td>
+      <td><code>/api/v1/pipeline/run</code></td>
+      <td>一键跑通全流程（数据→基线→分配→利润→风险）</td>
+      <td>StarRocks 实时查询 + 真实成本</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-green">POST</span></td>
+      <td><code>/api/v1/profit/calculate</code></td>
+      <td>利润测算（含 P&L、对比、Top/Bottom）</td>
+      <td>StarRocks + CostEstimator</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">GET</span></td>
+      <td><code>/api/v1/profit/drill-down/region</code></td>
+      <td>按区域下钻利润</td>
+      <td>StarRocks + store_region_map</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">GET</span></td>
+      <td><code>/api/v1/profit/drill-down/type</code></td>
+      <td>按门店类型下钻利润</td>
+      <td>StarRocks + store_type_map</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-blue">GET</span></td>
+      <td><code>/api/v1/pipeline/health</code></td>
+      <td>各模块可用性检查</td>
+      <td>模块导入检查</td>
+    </tr>
+  </table>
+  </div>
+</div>
+
+<!-- ==================== 7. 已交付成果 ==================== -->
+<div class="card">
+  <h2>七、已交付成果</h2>
+  <ul class="check-list">
+    <li>6 个 Agent 全部实现（Orchestrator + DataAgent + BaselineAgent + AllocationAgent + ProfitAgent + RiskAgent）</li>
+    <li>StarRocks 数据采集器（1084 行，7 张源表，10 个 fetch 方法）</li>
+    <li>真实损益数据接入（ads_fin_fact_day_storeloss_pp → CostEstimator → StoreProfit）</li>
+    <li>承压分配算法（5 维权重 + 保底线 + 情景模拟）</li>
+    <li>利润测算引擎（P&L 表 + 区域/类型下钻 + Top/Bottom 排行）</li>
+    <li>风险评估框架（可达性 + 均匀度 + 高风险标注 + 建议）</li>
+    <li>FastAPI 后端（5 个 API 端点 + 自动文档）</li>
+    <li>React + Vite 前端（利润看板 + 分配方案 + 风险预警）</li>
+    <li>8 个 ETL SQL 脚本（覆盖全部数据源）</li>
+    <li>159 个单元测试全部通过</li>
+    <li>真实数据利润测算脚本（run_real_profit.py）</li>
+  </ul>
+</div>
+
+</div>
+
+<div class="footer">
+  鞋服零售利润测算系统 · 已实施架构文档 · 2026-05-15 · v2.0
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: { primaryColor: '#4A90D9' },
+    sequence: { mirrorActors: false, messageAlign: 'center' }
+  });
+</script>
+</body>
+</html>

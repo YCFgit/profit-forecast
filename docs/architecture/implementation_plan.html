@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>鞋服零售利润测算系统 — 实施交付报告</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
+  .banner { background: linear-gradient(135deg, #0f3460 0%, #16213e 50%, #1a1a2e 100%); color: #fff; padding: 48px 40px; text-align: center; }
+  .banner h1 { font-size: 30px; margin: 0 0 8px; letter-spacing: 2px; }
+  .banner .sub { font-size: 15px; opacity: 0.8; margin-bottom: 4px; }
+  .banner .meta { font-size: 13px; opacity: 0.5; margin-top: 12px; }
+  .banner .tags { margin-top: 16px; }
+  .banner .tag { display: inline-block; background: rgba(255,255,255,0.15); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin: 0 4px; }
+  .banner .tag-done { background: rgba(47,158,68,0.6); }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+  .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); padding: 28px 32px; margin-bottom: 24px; }
+  .card h2 { color: #1a1a2e; font-size: 20px; border-left: 4px solid #4A90D9; padding-left: 12px; margin: 0 0 20px; }
+  .card h3 { color: #2c3e50; font-size: 16px; margin: 24px 0 12px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: #f8f9fa; color: #555; font-weight: 600; text-align: left; padding: 10px 14px; border-bottom: 2px solid #e9ecef; font-size: 13px; }
+  td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+  tr:hover td { background: #fafbfc; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; color: #fff; font-weight: 500; }
+  .badge-blue { background: #4A90D9; }
+  .badge-purple { background: #7B68EE; }
+  .badge-red { background: #FF6B6B; }
+  .badge-green { background: #51CF66; }
+  .badge-orange { background: #FFA94D; }
+  .badge-violet { background: #845EF7; }
+  .badge-gray { background: #868e96; }
+  .badge-teal { background: #20C997; }
+  .formula { background: #f0f7ff; border-left: 4px solid #4A90D9; padding: 16px 20px; margin: 16px 0; font-size: 14px; line-height: 2; border-radius: 0 8px 8px 0; }
+  .flow { margin: 16px 0; }
+  .flow-step { display: flex; align-items: flex-start; margin: 12px 0; font-size: 14px; }
+  .flow-step .num { width: 32px; height: 32px; border-radius: 50%; background: #4A90D9; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; margin-right: 14px; flex-shrink: 0; }
+  .flow-step .content { flex: 1; }
+  .flow-step .title { font-weight: 600; color: #1a1a2e; }
+  .flow-step .desc { color: #555; margin-top: 2px; font-size: 13px; line-height: 1.6; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 16px 0; }
+  .metric-card { background: #f8f9fa; border-radius: 8px; padding: 16px; text-align: center; }
+  .metric-card .label { font-size: 12px; color: #868e96; margin-bottom: 4px; }
+  .metric-card .value { font-size: 24px; font-weight: 700; color: #1a1a2e; }
+  .metric-card .unit { font-size: 12px; color: #868e96; }
+  .hl { background: #fff3cd; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .risk-high { color: #e03131; font-weight: 600; }
+  .risk-mid { color: #f59f00; font-weight: 600; }
+  .risk-low { color: #2f9e44; font-weight: 600; }
+  .footer { text-align: center; padding: 32px; color: #adb5bd; font-size: 12px; }
+  .code-block { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 12px 0; }
+  .code-block .comment { color: #6c7086; }
+  .code-block .keyword { color: #cba6f7; }
+  .code-block .string { color: #a6e3a1; }
+  .code-block .func { color: #89b4fa; }
+  .check-list { list-style: none; padding: 0; margin: 12px 0; }
+  .check-list li { padding: 6px 0; font-size: 14px; color: #333; }
+  .check-list li::before { content: "✅ "; }
+  .timeline { position: relative; padding-left: 40px; margin: 20px 0; }
+  .timeline::before { content: ''; position: absolute; left: 15px; top: 0; bottom: 0; width: 2px; background: #dee2e6; }
+  .timeline-item { position: relative; margin-bottom: 24px; }
+  .timeline-item::before { content: ''; position: absolute; left: -33px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #51CF66; border: 2px solid #fff; box-shadow: 0 0 0 2px #51CF66; }
+  .timeline-item .period { font-size: 12px; color: #868e96; margin-bottom: 4px; }
+  .timeline-item .title { font-size: 15px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+  .timeline-item .detail { font-size: 13px; color: #555; line-height: 1.6; }
+  .status-done { display: inline-block; background: #d3f9d8; color: #2b8a3e; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>鞋服零售利润测算系统 — 实施交付报告</h1>
+  <div class="sub">从方案到落地 · Python + StarRocks + FastAPI + React</div>
+  <div class="tags">
+    <span class="tag tag-done">已实施完成</span>
+    <span class="tag">基线预估</span>
+    <span class="tag">承压分配</span>
+    <span class="tag">利润测算</span>
+    <span class="tag">真实损益数据</span>
+    <span class="tag">多 Agent 协作</span>
+  </div>
+  <div class="meta">日期：2026-05-15 &nbsp;|&nbsp; 版本：v2.0（已实施版）</div>
+</div>
+
+<div class="container">
+
+<!-- ==================== 1. 交付概览 ==================== -->
+<div class="card">
+  <h2>一、交付概览</h2>
+
+  <h3>1.1 核心指标</h3>
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="label">Agent 数量</div>
+      <div class="value">6</div>
+      <div class="unit">1 Hub + 5 Spoke</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">测试覆盖</div>
+      <div class="value">159</div>
+      <div class="unit">全部通过</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">API 端点</div>
+      <div class="value">5</div>
+      <div class="unit">FastAPI + 自动文档</div>
+    </div>
+    <div class="metric-card">
+      <div class="label">数据源</div>
+      <div class="value">7 张表</div>
+      <div class="unit">StarRocks 实时查询</div>
+    </div>
+  </div>
+
+  <h3>1.2 技术栈（已实施）</h3>
+  <div class="table-wrap">
+  <table>
+    <tr><th>层级</th><th>选型</th><th>说明</th></tr>
+    <tr><td><span class="badge badge-blue">语言</span></td><td>Python 3.13</td><td>主语言</td></tr>
+    <tr><td><span class="badge badge-green">Web 框架</span></td><td>FastAPI + Uvicorn</td><td>异步 API，端口 8000</td></tr>
+    <tr><td><span class="badge badge-purple">前端</span></td><td>React + Vite</td><td>SPA，端口 3000</td></tr>
+    <tr><td><span class="badge badge-orange">数据源</span></td><td>StarRocks（MySQL 协议）</td><td>OLAP 实时查询，pymysql + SQLAlchemy</td></tr>
+    <tr><td><span class="badge badge-violet">预测模型</span></td><td>statsmodels + Prophet</td><td>时间序列基线预估</td></tr>
+    <tr><td><span class="badge badge-teal">成本数据</span></td><td>ads_fin_fact_day_storeloss_pp</td><td>门店日损益（业绩/返利/预算/同期口径）</td></tr>
+    <tr><td><span class="badge badge-gray">测试</span></td><td>pytest + pytest-asyncio</td><td>159 个测试，asyncio_mode=auto</td></tr>
+    <tr><td><span class="badge badge-gray">部署</span></td><td>Docker Compose</td><td>一键部署（FastAPI + React + PostgreSQL）</td></tr>
+  </table>
+  </div>
+</div>
+
+<!-- ==================== 2. 实施里程碑 ==================== -->
+<div class="card">
+  <h2>二、实施里程碑（全部完成）</h2>
+
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="period">M1 <span class="status-done">已完成</span></div>
+      <div class="title">项目结构 + 数据基础设施</div>
+      <div class="detail">
+        <strong>交付物</strong>：项目骨架（src/agents, src/profit, src/risk...）、FastAPI 应用、Docker Compose、Alembic 迁移、Mock 数据采集器、数据质量检查器<br>
+        <strong>数据源</strong>：StarRocksCollector 实现 7 张源表查询（1084 行 SQL）
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="period">M2 <span class="status-done">已完成</span></div>
+      <div class="title">基线预估模型</div>
+      <div class="detail">
+        <strong>交付物</strong>：BaselineAgent + 业务规则引擎（6 分类 + 季节指数 + 6 预估器）、statsmodels/Prophet 集成<br>
+        <strong>能力</strong>：按门店历史月度数据自动预估基线收入
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="period">M3 <span class="status-done">已完成</span></div>
+      <div class="title">承压分配算法</div>
+      <div class="detail">
+        <strong>交付物</strong>：AllocationAgent + TargetAllocator + WeightCalculator（5 维权重）、保底线约束、公平性检查、情景模拟<br>
+        <strong>公式</strong>：T<sub>i</sub> = B<sub>i</sub> + G × W<sub>i</sub> / ΣW<sub>i</sub>，约束 T<sub>i</sub> ≥ B<sub>i</sub> × 80%
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="period">M4 <span class="status-done">已完成</span></div>
+      <div class="title">利润测算 + 风险评估 + 真实数据接入</div>
+      <div class="detail">
+        <strong>交付物</strong>：ProfitAgent + ProfitCalculator + CostEstimator + RiskAgent + ProfitReport<br>
+        <strong>核心突破</strong>：<span class="hl">接入 ads_fin_fact_day_storeloss_pp 真实损益数据</span>，替代硬编码默认比例<br>
+        <strong>P&L 表</strong>：人工/租金物业/营销/物流仓储/折旧/其他 全分项，标记数据来源（real/default）
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="period">M5 <span class="status-done">已完成</span></div>
+      <div class="title">Agent 编排 + Web 界面 + API</div>
+      <div class="detail">
+        <strong>交付物</strong>：Orchestrator（5 Phase 编排）、FastAPI 5 个端点、React 前端 4 个页面<br>
+        <strong>API</strong>：pipeline/run（全流程）、profit/calculate（利润）、drill-down/region|type（下钻）、health（健康）
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="period">M6 <span class="status-done">已完成</span></div>
+      <div class="title">测试 + ETL + 文档</div>
+      <div class="detail">
+        <strong>交付物</strong>：159 个单元测试全部通过、8 个 ETL SQL 脚本、run_real_profit.py 真实数据测算脚本、架构文档（agents.json + Mermaid 图 + HTML 报告）<br>
+        <strong>Git</strong>：已推送到 https://github.com/YCFgit/profit-forecast
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 3. 核心模块 ==================== -->
+<div class="card">
+  <h2>三、核心模块详解</h2>
+
+  <h3>3.1 数据源（StarRocks 7 张表）</h3>
+  <div class="table-wrap">
+  <table>
+    <tr><th>表名</th><th>用途</th><th>采集方法</th></tr>
+    <tr><td><code>dws_pub.dws_dim_org_allinfo</code></td><td>门店主数据（编码/名称/区域/面积/商圈）</td><td>fetch_stores()</td></tr>
+    <tr><td><code>proj_facana.dwd_f04_dayone_countbase_pp_new</code></td><td>日损益表（销售/成本/费用/利润）</td><td>fetch_daily_sales() / fetch_monthly_metrics() / fetch_cost_structure()</td></tr>
+    <tr><td><code>proj_facana.ads_fin_fact_day_storeloss_pp</code></td><td>门店日损益（多口径：业绩/返利/预算/同期）<span class="risk-low">核心</span></td><td>fetch_store_loss()</td></tr>
+    <tr><td><code>dws_pub.dws_fact_day_org_target_cost</code></td><td>日目标数据（日/月/年目标）</td><td>fetch_daily_target_cost()</td></tr>
+    <tr><td><code>dws_pub.dws_dim_org_on_off</code></td><td>开关状态（开店/关店/改造事件）</td><td>fetch_switch_status()</td></tr>
+    <tr><td><code>spark_catalog.ads_pub.ads_fact_pos_ord_analysis</code></td><td>POS 订单明细（品类/尺码/折扣/客流）</td><td>fetch_pos_orders()</td></tr>
+    <tr><td><code>proj_facana.dwd_f04_dayone_s_store_info</code></td><td>门店扩充信息（人员/面积/合同）</td><td>fetch_staff()</td></tr>
+  </table>
+  </div>
+
+  <h3>3.2 成本预估器（CostEstimator）</h3>
+  <div class="formula">
+    <strong>核心方法</strong>：<code>from_store_loss_data(store_loss_df, targets, months=3)</code><br>
+    <strong>数据源</strong>：ads_fin_fact_day_storeloss_pp 的 d1_pf_ 口径（业绩-地区版）<br>
+    <strong>处理</strong>：按门店按月汇总日数据 → 取最近 3 月均值 → 构建成本结构<br>
+    <strong>成本拆分</strong>：cogs_ratio + salary(工资+社保) + rent(残差估算) + marketing(商场费) + logistics(快递+B管理×0.3) + depreciation(装修费) + other<br>
+    <strong>安全阀</strong>：cogs_ratio 限制在 [0.20, 0.80]，防止异常值<br>
+    <strong>降级</strong>：无数据门店自动使用默认比例，标记 data_source="default"
+  </div>
+
+  <h3>3.3 利润计算器（ProfitCalculator）</h3>
+  <div class="table-wrap">
+  <table>
+    <tr><th>字段</th><th>说明</th><th>来源</th></tr>
+    <tr><td>revenue</td><td>收入（分配目标）</td><td>AllocationAgent</td></tr>
+    <tr><td>cogs</td><td>采购成本</td><td>revenue × cogs_ratio</td></tr>
+    <tr><td>salary</td><td>人工成本</td><td>CostEstimator（真实）或默认 10%</td></tr>
+    <tr><td>rent</td><td>租金</td><td>CostEstimator（真实）或默认 5%</td></tr>
+    <tr><td>marketing</td><td>营销费用</td><td>CostEstimator（商场费）或默认 3%</td></tr>
+    <tr><td>logistics</td><td>物流费用</td><td>CostEstimator（快递）或默认 2%</td></tr>
+    <tr><td>data_source</td><td>数据来源标记</td><td>"real" | "default"</td></tr>
+    <tr><td>social_fee / mall_fee / ...</td><td>明细扩展字段</td><td>CostEstimator</td></tr>
+  </table>
+  </div>
+</div>
+
+<!-- ==================== 4. ETL 脚本 ==================== -->
+<div class="card">
+  <h2>四、ETL 脚本（8 个 SQL）</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>脚本</th><th>数据源</th><th>用途</th><th>优先级</th></tr>
+    <tr><td><code>01_stores.sql</code></td><td>dws_dim_org_allinfo</td><td>门店主数据</td><td>必需</td></tr>
+    <tr><td><code>02_store_loss.sql</code></td><td>ads_fin_fact_day_storeloss_pp</td><td>门店日损益（核心）</td><td><span class="risk-low">必需</span></td></tr>
+    <tr><td><code>03_monthly_metrics.sql</code></td><td>dwd_f04_dayone_countbase_pp_new</td><td>月度指标聚合</td><td>必需</td></tr>
+    <tr><td><code>04_cost_structure.sql</code></td><td>dwd_f04_dayone_countbase_pp_new</td><td>成本结构明细</td><td>推荐</td></tr>
+    <tr><td><code>05_daily_target_cost.sql</code></td><td>dws_fact_day_org_target_cost</td><td>日目标数据</td><td>可选</td></tr>
+    <tr><td><code>06_switch_status.sql</code></td><td>dws_dim_org_on_off</td><td>开关状态</td><td>可选</td></tr>
+    <tr><td><code>07_pos_orders.sql</code></td><td>ads_fact_pos_ord_analysis</td><td>POS 订单明细</td><td>可选</td></tr>
+    <tr><td><code>08_store_info.sql</code></td><td>dwd_f04_dayone_s_store_info</td><td>门店扩充信息</td><td>可选</td></tr>
+  </table>
+  </div>
+</div>
+
+<!-- ==================== 5. 测试报告 ==================== -->
+<div class="card">
+  <h2>五、测试报告</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>测试模块</th><th>用例数</th><th>状态</th></tr>
+    <tr><td>基线预估（baseline）</td><td>~30</td><td><span class="status-done">全部通过</span></td></tr>
+    <tr><td>承压分配（allocation）</td><td>~25</td><td><span class="status-done">全部通过</span></td></tr>
+    <tr><td>利润测算（profit）</td><td>~35</td><td><span class="status-done">全部通过</span></td></tr>
+    <tr><td>风险评估（risk）</td><td>~15</td><td><span class="status-done">全部通过</span></td></tr>
+    <tr><td>数据采集（data）</td><td>~20</td><td><span class="status-done">全部通过</span></td></tr>
+    <tr><td>Agent 编排（agents）</td><td>~15</td><td><span class="status-done">全部通过</span></td></tr>
+    <tr><td>API 端点</td><td>~10</td><td><span class="status-done">全部通过</span></td></tr>
+    <tr><td>端到端（test_phase4）</td><td>11</td><td><span class="status-done">全部通过</span></td></tr>
+    <tr style="font-weight:600;background:#f8f9fa"><td>合计</td><td>159</td><td><span class="status-done">159 passed, 1 xfailed</span></td></tr>
+  </table>
+  </div>
+</div>
+
+<!-- ==================== 6. 验收标准 ==================== -->
+<div class="card">
+  <h2>六、验收标准（已达成）</h2>
+  <div class="table-wrap">
+  <table>
+    <tr><th>验收项</th><th>标准</th><th>实际</th><th>状态</th></tr>
+    <tr><td>数据层</td><td>StarRocks 7 张源表查询正常</td><td>StarRocksCollector 1084 行，10 个 fetch 方法</td><td><span class="status-done">达成</span></td></tr>
+    <tr><td>基线模型</td><td>基于月度指标的基线预估</td><td>BaselineAgent + 6 预估器</td><td><span class="status-done">达成</span></td></tr>
+    <tr><td>分配算法</td><td>保底线约束，无门店低于基线 80%</td><td>5 维权重 + 保底线 + 情景模拟</td><td><span class="status-done">达成</span></td></tr>
+    <tr><td>真实成本</td><td>接入门店损益数据替代默认比例</td><td>CostEstimator.from_store_loss_data()</td><td><span class="status-done">达成</span></td></tr>
+    <tr><td>端到端</td><td>完整跑通全流程</td><td>Orchestrator 5 Phase + test_phase4 通过</td><td><span class="status-done">达成</span></td></tr>
+    <tr><td>API</td><td>RESTful API + 自动文档</td><td>5 个端点，/docs 自动生成</td><td><span class="status-done">达成</span></td></tr>
+    <tr><td>测试</td><td>单元测试覆盖核心模块</td><td>159 个测试全部通过</td><td><span class="status-done">达成</span></td></tr>
+    <tr><td>ETL</td><td>数据导出脚本</td><td>8 个 SQL + run_real_profit.py + export_to_csv.py</td><td><span class="status-done">达成</span></td></tr>
+  </table>
+  </div>
+</div>
+
+</div>
+
+<div class="footer">
+  鞋服零售利润测算系统 · 实施交付报告 · 2026-05-15 · v2.0
+</div>
+</body>
+</html>
