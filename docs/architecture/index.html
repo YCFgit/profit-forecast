@@ -4,64 +4,73 @@
 <meta charset="UTF-8">
 <title>鞋服零售利润测算系统 — 已实施架构文档</title>
 <style>
-  * { box-sizing: border-box; }
-  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif; background: #f0f2f5; margin: 0; padding: 0; color: #1a1a2e; }
-  .banner { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: #fff; padding: 48px 40px; text-align: center; }
-  .banner h1 { font-size: 32px; margin: 0 0 8px; letter-spacing: 2px; }
-  .banner .sub { font-size: 16px; opacity: 0.8; margin-bottom: 4px; }
-  .banner .meta { font-size: 13px; opacity: 0.5; margin-top: 12px; }
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
+  :root {
+    --primary: #1E40AF; --primary-light: #3B82F6; --primary-bg: #DBEAFE;
+    --accent: #D97706; --accent-light: #F59E0B;
+    --success: #16A34A; --danger: #DC2626; --warning: #D97706;
+    --text: #0F172A; --text-secondary: #475569; --text-tertiary: #94A3B8;
+    --bg: #F1F5F9; --surface: #FFFFFF; --border: #E2E8F0; --muted: #F8FAFC;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Fira Sans", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .banner { background: linear-gradient(135deg, #0F172A 0%, #1E293B 40%, #1E40AF 100%); color: #fff; padding: 56px 40px; text-align: center; }
+  .banner h1 { font-size: 30px; margin: 0 0 8px; letter-spacing: 1px; font-weight: 700; }
+  .banner .sub { font-size: 15px; opacity: 0.75; margin-bottom: 4px; font-weight: 400; }
+  .banner .meta { font-size: 12px; opacity: 0.45; margin-top: 12px; }
   .banner .tags { margin-top: 16px; }
-  .banner .tag { display: inline-block; background: rgba(255,255,255,0.15); padding: 4px 14px; border-radius: 20px; font-size: 13px; margin: 0 4px; }
-  .banner .tag-done { background: rgba(47,158,68,0.6); }
+  .banner .tag { display: inline-block; background: rgba(255,255,255,0.12); padding: 4px 14px; border-radius: 20px; font-size: 12px; margin: 0 4px; transition: background 0.2s; }
+  .banner .tag:hover { background: rgba(255,255,255,0.2); }
+  .banner .tag-done { background: rgba(22,163,74,0.5); }
   .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
-  .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 8px rgba(0,0,0,0.06); padding: 28px 32px; margin-bottom: 24px; }
-  .card h2 { color: #1a1a2e; font-size: 20px; border-left: 4px solid #4A90D9; padding-left: 12px; margin: 0 0 20px; }
-  .card h3 { color: #2c3e50; font-size: 16px; margin: 20px 0 12px; }
+  .card { background: var(--surface); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03); padding: 28px 32px; margin-bottom: 20px; border: 1px solid var(--border); transition: box-shadow 0.2s; }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.07); }
+  .card h2 { color: var(--text); font-size: 20px; border-left: 4px solid var(--primary); padding-left: 12px; margin: 0 0 20px; font-weight: 600; }
+  .card h3 { color: var(--text); font-size: 15px; margin: 20px 0 12px; font-weight: 600; }
   .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { background: #f8f9fa; color: #555; font-weight: 600; text-align: left; padding: 10px 14px; border-bottom: 2px solid #e9ecef; font-size: 13px; }
-  td { padding: 10px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
-  tr:hover td { background: #fafbfc; }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; color: #fff; font-weight: 500; }
-  .badge-blue { background: #4A90D9; }
-  .badge-purple { background: #7B68EE; }
-  .badge-red { background: #FF6B6B; }
-  .badge-green { background: #51CF66; }
-  .badge-orange { background: #FFA94D; }
-  .badge-violet { background: #845EF7; }
-  .badge-gray { background: #868e96; }
-  .badge-teal { background: #20C997; }
-  .formula { background: #f0f7ff; border-left: 4px solid #4A90D9; padding: 16px 20px; margin: 16px 0; font-size: 14px; line-height: 2; border-radius: 0 8px 8px 0; }
-  .formula strong { color: #1a1a2e; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--muted); color: var(--text-secondary); font-weight: 600; text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+  td { padding: 10px 14px; border-bottom: 1px solid #F1F5F9; vertical-align: top; transition: background 0.15s; }
+  tr:hover td { background: var(--muted); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; color: #fff; font-weight: 600; letter-spacing: 0.3px; }
+  .badge-blue { background: var(--primary); }
+  .badge-purple { background: #7C3AED; }
+  .badge-red { background: var(--danger); }
+  .badge-green { background: var(--success); }
+  .badge-orange { background: var(--accent); }
+  .badge-violet { background: #7C3AED; }
+  .badge-gray { background: #64748B; }
+  .badge-teal { background: #0891B2; }
+  .formula { background: #EFF6FF; border-left: 4px solid var(--primary); padding: 16px 20px; margin: 16px 0; font-size: 13px; line-height: 2; border-radius: 0 8px 8px 0; }
+  .formula strong { color: var(--text); }
+  .formula code { font-family: "Fira Code", monospace; font-size: 12px; background: rgba(30,64,175,0.08); padding: 1px 5px; border-radius: 3px; }
   .flow { margin: 16px 0; }
-  .flow-step { display: flex; align-items: flex-start; margin: 12px 0; font-size: 14px; }
-  .flow-step .num { width: 32px; height: 32px; border-radius: 50%; background: #4A90D9; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; margin-right: 14px; flex-shrink: 0; }
-  .flow-step .content { flex: 1; }
-  .flow-step .title { font-weight: 600; color: #1a1a2e; }
-  .flow-step .desc { color: #555; margin-top: 2px; font-size: 13px; line-height: 1.6; }
+  .flow-step { display: flex; align-items: flex-start; margin: 10px 0; font-size: 13px; }
+  .flow-step .num { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; margin-right: 14px; flex-shrink: 0; font-family: "Fira Code", monospace; }
+  .flow-step .content { flex: 1; padding-top: 3px; }
+  .flow-step .title { font-weight: 600; color: var(--text); }
+  .flow-step .title code { font-family: "Fira Code", monospace; font-size: 12px; background: #F1F5F9; padding: 1px 5px; border-radius: 3px; }
+  .flow-step .desc { color: var(--text-secondary); margin-top: 2px; font-size: 12px; line-height: 1.6; }
   .mermaid { display: flex; justify-content: center; margin: 20px 0; }
-  .hl { background: #fff3cd; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
-  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 16px 0; }
-  .metric-card { background: #f8f9fa; border-radius: 8px; padding: 16px; text-align: center; }
-  .metric-card .label { font-size: 12px; color: #868e96; margin-bottom: 4px; }
-  .metric-card .value { font-size: 24px; font-weight: 700; color: #1a1a2e; }
-  .metric-card .unit { font-size: 12px; color: #868e96; }
-  .vs-table td:first-child { font-weight: 600; color: #4A90D9; width: 120px; }
-  .risk-high { color: #e03131; font-weight: 600; }
-  .risk-mid { color: #f59f00; font-weight: 600; }
-  .risk-low { color: #2f9e44; font-weight: 600; }
-  .footer { text-align: center; padding: 32px; color: #adb5bd; font-size: 12px; }
+  .hl { background: #FEF3C7; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+  .metric-card { background: var(--muted); border-radius: 10px; padding: 18px; text-align: center; border: 1px solid var(--border); transition: transform 0.15s, box-shadow 0.15s; }
+  .metric-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .metric-card .label { font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+  .metric-card .value { font-size: 28px; font-weight: 700; color: var(--primary); font-family: "Fira Code", monospace; }
+  .metric-card .unit { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .vs-table td:first-child { font-weight: 600; color: var(--primary); width: 120px; }
+  .risk-high { color: var(--danger); font-weight: 600; }
+  .risk-mid { color: var(--warning); font-weight: 600; }
+  .risk-low { color: var(--success); font-weight: 600; }
+  .footer { text-align: center; padding: 32px; color: var(--text-tertiary); font-size: 11px; }
   .check-list { list-style: none; padding: 0; margin: 12px 0; }
-  .check-list li { padding: 4px 0; font-size: 14px; color: #333; }
+  .check-list li { padding: 5px 0; font-size: 13px; color: var(--text-secondary); }
   .check-list li::before { content: "✅ "; }
-  .code-block { background: #1e1e2e; color: #cdd6f4; padding: 16px 20px; border-radius: 8px; font-family: "SF Mono", "Fira Code", monospace; font-size: 13px; line-height: 1.6; overflow-x: auto; margin: 12px 0; }
-  .code-block .comment { color: #6c7086; }
-  .code-block .keyword { color: #cba6f7; }
-  .code-block .string { color: #a6e3a1; }
-  .code-block .func { color: #89b4fa; }
-  .status-done { display: inline-block; background: #d3f9d8; color: #2b8a3e; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
-  .tree-block { background: #1e1e2e; color: #cdd6f4; padding: 20px 24px; border-radius: 10px; font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", monospace; font-size: 13px; line-height: 1.8; overflow-x: auto; margin: 12px 0; white-space: pre; }
-  .tree-block .tree-comment { color: #6c7086; font-style: italic; }
+  code { font-family: "Fira Code", monospace; font-size: 12px; background: #F1F5F9; padding: 1px 5px; border-radius: 3px; }
+  .status-done { display: inline-block; background: #DCFCE7; color: #166534; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .tree-block { background: #0F172A; color: #E2E8F0; padding: 20px 24px; border-radius: 10px; font-family: "Fira Code", "SF Mono", "Cascadia Code", monospace; font-size: 12.5px; line-height: 1.8; overflow-x: auto; margin: 12px 0; white-space: pre; border: 1px solid #1E293B; }
+  .tree-block .tree-comment { color: #64748B; font-style: italic; }
   .tree-block .tree-emoji { font-style: normal; }
 </style>
 </head>
@@ -218,7 +227,7 @@ sequenceDiagram
     DC->>DC: fetch_monthly_metrics() 月度指标
     DC->>DC: fetch_store_loss() 门店日损益
     DC->>DC: fetch_daily_target_cost() 日目标
-    DC->>DC: fetch_switch_status() 开关状态
+    DC->>DC: fetch_switch_status() 门店开改关状态
     DC-->>PM: DataCollectionResult
     end
 
@@ -288,7 +297,7 @@ sequenceDiagram
       <td>
         · 从 StarRocks 采集 7 张源表数据<br>
         · 门店主数据、月度指标、日损益<br>
-        · 日目标、开关状态、成本明细<br>
+        · 日目标、门店开改关状态、成本明细<br>
         · 数据质量检查
       </td>
       <td>adapter → DataCollectionResult</td>
@@ -365,7 +374,7 @@ sequenceDiagram
     <tr><td><code>proj_facana.dwd_f04_dayone_countbase_pp_new</code></td><td>fetch_monthly_metrics()</td><td>月度指标 + 成本结构</td></tr>
     <tr><td><code>proj_facana.ads_fin_fact_day_storeloss_pp</code></td><td>fetch_store_loss()</td><td><span class="hl">门店日损益（核心）</span></td></tr>
     <tr><td><code>dws_pub.dws_fact_day_org_target_cost</code></td><td>fetch_daily_target_cost()</td><td>日目标数据</td></tr>
-    <tr><td><code>dws_pub.dws_dim_org_on_off</code></td><td>fetch_switch_status()</td><td>开关状态</td></tr>
+    <tr><td><code>dws_pub.dws_dim_org_on_off</code></td><td>fetch_switch_status()</td><td>门店开改关状态</td></tr>
   </table>
   </div>
 
@@ -375,7 +384,7 @@ sequenceDiagram
       <span class="num" style="background:#FFA94D">1</span>
       <div class="content">
         <div class="title">DataAgent.collect() → DataCollectionResult</div>
-        <div class="desc">从 StarRocks 采集门店、月度指标、日损益、目标、开关状态等全量数据</div>
+        <div class="desc">从 StarRocks 采集门店、月度指标、日损益、目标、门店开改关状态等全量数据</div>
       </div>
     </div>
     <div class="flow-step">
@@ -541,7 +550,14 @@ sequenceDiagram
   mermaid.initialize({
     startOnLoad: true,
     theme: 'base',
-    themeVariables: { primaryColor: '#4A90D9' },
+    themeVariables: {
+      primaryColor: '#DBEAFE',
+      primaryTextColor: '#0F172A',
+      primaryBorderColor: '#1E40AF',
+      lineColor: '#94A3B8',
+      secondaryColor: '#F1F5F9',
+      tertiaryColor: '#F8FAFC',
+    },
     sequence: { mirrorActors: false, messageAlign: 'center' }
   });
 </script>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card, Row, Col, Button, InputNumber, Spin, message, Table, Tag, Descriptions } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { allocateTargets } from '../api'
+import { colors, chartColors } from '../theme'
 
 export default function Allocation() {
   const [loading, setLoading] = useState(false)
@@ -21,7 +22,6 @@ export default function Allocation() {
     }
   }
 
-  // 承压率分布图
   const getPressureDistOption = () => {
     if (!result) return {}
     const rates = result.allocations.map(a => parseFloat(a.pressure_ratio) / 100)
@@ -37,63 +37,63 @@ export default function Allocation() {
       else bins['>50%']++
     })
     return {
-      title: { text: '承压率分布', left: 'center' },
+      title: { text: '承压率分布', left: 'center', textStyle: { fontSize: 14, color: colors.text } },
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: labels },
+      xAxis: { type: 'category', data: labels, axisLabel: { fontSize: 11 } },
       yAxis: { type: 'value', name: '门店数' },
+      grid: { top: 40, bottom: 30, left: 50, right: 20 },
       series: [{
         type: 'bar',
         data: labels.map(l => bins[l]),
         itemStyle: {
           color: (params) => {
-            const colors = ['#52c41a', '#73d13d', '#faad14', '#ff7a45', '#ff4d4f', '#cf1322']
-            return colors[params.dataIndex]
+            const c = [colors.success, '#22C55E', colors.warning, '#F97316', colors.danger, '#B91C1C']
+            return c[params.dataIndex]
           },
+          borderRadius: [4, 4, 0, 0],
         },
+        barMaxWidth: 40,
       }],
     }
   }
 
-  // 基线 vs 目标散点图
   const getScatterOption = () => {
     if (!result) return {}
     const data = result.allocations.map(a => [a.baseline, a.target])
     return {
-      title: { text: '基线 vs 目标', left: 'center' },
+      title: { text: '基线 vs 目标', left: 'center', textStyle: { fontSize: 14, color: colors.text } },
       tooltip: {
         trigger: 'item',
-        formatter: (p) => `${p.data[0].store_code}<br/>基线: ¥${p.value[0].toLocaleString()}<br/>目标: ¥${p.value[1].toLocaleString()}`,
+        formatter: (p) => `基线: ¥${p.value[0].toLocaleString()}<br/>目标: ¥${p.value[1].toLocaleString()}`,
       },
-      xAxis: { type: 'value', name: '基线' },
-      yAxis: { type: 'value', name: '目标' },
+      xAxis: { type: 'value', name: '基线', nameTextStyle: { color: colors.textSecondary } },
+      yAxis: { type: 'value', name: '目标', nameTextStyle: { color: colors.textSecondary } },
+      grid: { top: 40, bottom: 40, left: 70, right: 20 },
       series: [{
         type: 'scatter',
         data,
         symbolSize: 8,
+        itemStyle: { color: colors.primary, opacity: 0.7 },
       }],
-      grid: { left: '15%' },
     }
   }
 
-  // 情景对比
   const getScenarioOption = () => {
     if (!result?.scenarios) return {}
     const names = Object.keys(result.scenarios)
     const targets = names.map(n => result.scenarios[n].total_target)
     return {
-      title: { text: '情景对比', left: 'center' },
+      title: { text: '情景对比', left: 'center', textStyle: { fontSize: 14, color: colors.text } },
       tooltip: { trigger: 'axis' },
-      xAxis: { type: 'category', data: names },
+      xAxis: { type: 'category', data: names, axisLabel: { fontSize: 11 } },
       yAxis: { type: 'value', name: '总目标', axisLabel: { formatter: (v) => `${(v / 10000).toFixed(0)}万` } },
+      grid: { top: 40, bottom: 30, left: 60, right: 20 },
       series: [{
         type: 'bar',
         data: targets,
-        itemStyle: { color: '#1890ff' },
-        label: {
-          show: true,
-          position: 'top',
-          formatter: (p) => `¥${(p.value / 10000).toFixed(0)}万`,
-        },
+        itemStyle: { color: colors.primary, borderRadius: [4, 4, 0, 0] },
+        barMaxWidth: 48,
+        label: { show: true, position: 'top', formatter: (p) => `¥${(p.value / 10000).toFixed(0)}万`, fontSize: 11 },
       }],
     }
   }
@@ -116,10 +116,10 @@ export default function Allocation() {
 
   return (
     <div>
-      <Card title="承压分配" style={{ marginBottom: 16 }}>
+      <Card style={{ marginBottom: 16, borderTop: `3px solid ${colors.accent}` }}>
         <Row gutter={16} align="middle">
           <Col>
-            <span>总利润目标: </span>
+            <span style={{ color: colors.textSecondary, fontWeight: 500 }}>总利润目标: </span>
             <InputNumber
               value={target}
               onChange={setTarget}
@@ -142,7 +142,7 @@ export default function Allocation() {
       {result && !loading && (
         <>
           <Card style={{ marginBottom: 16 }}>
-            <Descriptions bordered column={4}>
+            <Descriptions bordered column={4} size="small">
               <Descriptions.Item label="总目标">¥{result.total_target.toLocaleString()}</Descriptions.Item>
               <Descriptions.Item label="总基线">¥{result.total_baseline.toLocaleString()}</Descriptions.Item>
               <Descriptions.Item label="平均增长率">{result.avg_growth_rate}</Descriptions.Item>
@@ -155,17 +155,17 @@ export default function Allocation() {
           </Card>
 
           <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={8}>
+            <Col xs={24} lg={8}>
               <Card>
                 <ReactECharts option={getPressureDistOption()} style={{ height: 300 }} />
               </Card>
             </Col>
-            <Col span={8}>
+            <Col xs={24} lg={8}>
               <Card>
                 <ReactECharts option={getScatterOption()} style={{ height: 300 }} />
               </Card>
             </Col>
-            <Col span={8}>
+            <Col xs={24} lg={8}>
               <Card>
                 <ReactECharts option={getScenarioOption()} style={{ height: 300 }} />
               </Card>

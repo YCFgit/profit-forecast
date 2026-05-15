@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Card, Row, Col, Button, InputNumber, Spin, message, Table, Tag, Descriptions, List } from 'antd'
 import ReactECharts from 'echarts-for-react'
 import { assessRisk, runMonteCarlo } from '../api'
+import { colors, chartColors } from '../theme'
 
 export default function Risk() {
   const [loading, setLoading] = useState(false)
@@ -26,67 +27,68 @@ export default function Risk() {
     return map[level] || 'default'
   }
 
-  // 风险因素雷达图
   const getRadarOption = () => {
     if (!result) return {}
     return {
-      title: { text: '风险因素雷达图', left: 'center' },
+      title: { text: '风险因素雷达图', left: 'center', textStyle: { fontSize: 14, color: colors.text } },
       tooltip: {},
       radar: {
-        indicator: result.factors.map(f => ({
-          name: f.name,
-          max: 100,
-        })),
+        indicator: result.factors.map(f => ({ name: f.name, max: 100 })),
+        axisName: { color: colors.textSecondary, fontSize: 11 },
+        splitArea: { areaStyle: { color: ['#FAFBFD', '#F8FAFC', '#F1F5F9', '#E2E8F0'] } },
       },
       series: [{
         type: 'radar',
         data: [{
           value: result.factors.map(f => f.score),
           name: '风险分数',
-          areaStyle: { color: 'rgba(255, 77, 79, 0.2)' },
-          lineStyle: { color: '#ff4d4f' },
+          areaStyle: { color: 'rgba(220, 38, 38, 0.15)' },
+          lineStyle: { color: colors.danger, width: 2 },
+          itemStyle: { color: colors.danger },
         }],
       }],
     }
   }
 
-  // 风险因素柱状图
   const getFactorBarOption = () => {
     if (!result) return {}
     return {
-      title: { text: '各风险因素分数', left: 'center' },
+      title: { text: '各风险因素分数', left: 'center', textStyle: { fontSize: 14, color: colors.text } },
       tooltip: { trigger: 'axis' },
       xAxis: {
         type: 'category',
         data: result.factors.map(f => f.name),
+        axisLabel: { fontSize: 11 },
       },
       yAxis: { type: 'value', max: 100, name: '风险分' },
+      grid: { top: 40, bottom: 30, left: 50, right: 20 },
       series: [{
         type: 'bar',
         data: result.factors.map(f => ({
           value: f.score,
           itemStyle: {
-            color: f.level === 'low' ? '#52c41a' : f.level === 'medium' ? '#faad14' : '#ff4d4f',
+            color: f.level === 'low' ? colors.success : f.level === 'medium' ? colors.warning : colors.danger,
+            borderRadius: [4, 4, 0, 0],
           },
         })),
-        label: { show: true, position: 'top', formatter: '{c}' },
+        barMaxWidth: 36,
+        label: { show: true, position: 'top', formatter: '{c}', fontSize: 11 },
       }],
     }
   }
 
-  // 蒙特卡洛分布图
   const getMonteCarloOption = () => {
     if (!result?.monte_carlo) return {}
     const mc = result.monte_carlo
     return {
-      title: { text: '蒙特卡洛利润模拟', left: 'center' },
+      title: { text: '蒙特卡洛利润模拟', left: 'center', textStyle: { fontSize: 14, color: colors.text } },
       tooltip: {},
       series: [{
         type: 'gauge',
         progress: { show: true },
         detail: { valueAnimation: true, formatter: '{value}%', fontSize: 20 },
         data: [{ value: parseFloat(mc.loss_probability), name: '亏损概率' }],
-        axisLine: { lineStyle: { width: 20, color: [[0.1, '#52c41a'], [0.3, '#faad14'], [1, '#ff4d4f']] } },
+        axisLine: { lineStyle: { width: 20, color: [[0.1, colors.success], [0.3, colors.warning], [1, colors.danger]] } },
         min: 0,
         max: 50,
       }],
@@ -129,10 +131,10 @@ export default function Risk() {
 
   return (
     <div>
-      <Card title="风险评估" style={{ marginBottom: 16 }}>
+      <Card style={{ marginBottom: 16, borderTop: `3px solid ${colors.danger}` }}>
         <Row gutter={16} align="middle">
           <Col>
-            <span>总利润目标: </span>
+            <span style={{ color: colors.textSecondary, fontWeight: 500 }}>总利润目标: </span>
             <InputNumber
               value={target}
               onChange={setTarget}
@@ -156,9 +158,9 @@ export default function Risk() {
         <>
           {/* 综合风险 */}
           <Card style={{ marginBottom: 16 }}>
-            <Descriptions bordered column={4}>
+            <Descriptions bordered column={4} size="small">
               <Descriptions.Item label="综合风险分">
-                <span style={{ fontSize: 24, fontWeight: 'bold', color: getRiskColor(result.overall_level) === 'green' ? '#3f8600' : '#cf1322' }}>
+                <span style={{ fontSize: 24, fontWeight: 'bold', color: getRiskColor(result.overall_level) === 'green' ? colors.success : colors.danger }}>
                   {result.overall_score}
                 </span>
               </Descriptions.Item>
@@ -175,7 +177,7 @@ export default function Risk() {
           {/* 蒙特卡洛 */}
           {result.monte_carlo && (
             <Card style={{ marginBottom: 16 }}>
-              <Descriptions bordered column={5}>
+              <Descriptions bordered column={5} size="small">
                 <Descriptions.Item label="利润均值">¥{result.monte_carlo.profit_mean?.toLocaleString()}</Descriptions.Item>
                 <Descriptions.Item label="利润标准差">¥{result.monte_carlo.profit_std?.toLocaleString()}</Descriptions.Item>
                 <Descriptions.Item label="亏损概率">{result.monte_carlo.loss_probability}</Descriptions.Item>
@@ -187,12 +189,12 @@ export default function Risk() {
 
           {/* 图表 */}
           <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={12}>
+            <Col xs={24} lg={12}>
               <Card>
                 <ReactECharts option={getRadarOption()} style={{ height: 350 }} />
               </Card>
             </Col>
-            <Col span={12}>
+            <Col xs={24} lg={12}>
               <Card>
                 <ReactECharts option={getFactorBarOption()} style={{ height: 350 }} />
               </Card>
@@ -206,10 +208,10 @@ export default function Risk() {
           )}
 
           {/* 建议 */}
-          <Card title="风险建议" style={{ marginBottom: 16 }}>
+          <Card title="风险建议" style={{ marginBottom: 16, borderLeft: `3px solid ${colors.warning}` }}>
             <List
               dataSource={result.recommendations}
-              renderItem={(item) => <List.Item>{item}</List.Item>}
+              renderItem={(item) => <List.Item style={{ color: colors.textSecondary }}>{item}</List.Item>}
             />
           </Card>
 

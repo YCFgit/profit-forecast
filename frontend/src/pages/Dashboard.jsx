@@ -9,6 +9,7 @@ import {
 } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import { runPipeline } from '../api'
+import { colors, chartColors } from '../theme'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(false)
@@ -33,7 +34,6 @@ export default function Dashboard() {
     return map[level] || 'default'
   }
 
-  // 分配方案饼图
   const getAllocationPieOption = () => {
     if (!result) return {}
     const data = result.allocation_detail.slice(0, 10).map(d => ({
@@ -41,53 +41,59 @@ export default function Dashboard() {
       value: d.target,
     }))
     return {
-      title: { text: '门店目标分配 (Top 10)', left: 'center' },
+      title: { text: '门店目标分配 (Top 10)', left: 'center', textStyle: { fontSize: 14, color: colors.text } },
       tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      color: chartColors,
       series: [{
         type: 'pie',
         radius: ['40%', '70%'],
         data,
-        label: { formatter: '{b}\n{d}%' },
+        label: { formatter: '{b}\n{d}%', fontSize: 11 },
+        emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.15)' } },
       }],
     }
   }
 
-  // 增长率柱状图
   const getGrowthBarOption = () => {
     if (!result) return {}
     const sorted = [...result.allocation_detail].sort((a, b) => {
       return parseFloat(b.growth_rate) - parseFloat(a.growth_rate)
     }).slice(0, 15)
     return {
-      title: { text: '门店增长率排行 (Top 15)', left: 'center' },
+      title: { text: '门店增长率排行 (Top 15)', left: 'center', textStyle: { fontSize: 14, color: colors.text } },
       tooltip: { trigger: 'axis' },
       xAxis: {
         type: 'category',
         data: sorted.map(d => d.store_code),
-        axisLabel: { rotate: 45 },
+        axisLabel: { rotate: 45, fontSize: 11 },
       },
       yAxis: { type: 'value', axisLabel: { formatter: '{value}%' } },
+      grid: { top: 40, bottom: 60, left: 50, right: 20 },
       series: [{
         type: 'bar',
         data: sorted.map(d => parseFloat(d.growth_rate)),
         itemStyle: {
           color: (params) => {
             const v = params.value
-            if (v > 25) return '#ff4d4f'
-            if (v > 15) return '#faad14'
-            return '#52c41a'
+            if (v > 25) return colors.danger
+            if (v > 15) return colors.warning
+            return colors.success
           },
+          borderRadius: [4, 4, 0, 0],
         },
+        barMaxWidth: 32,
       }],
     }
   }
 
   return (
     <div>
-      <Card title="利润测算" style={{ marginBottom: 16 }}>
+      <Card
+        style={{ marginBottom: 16, borderTop: `3px solid ${colors.primary}` }}
+      >
         <Row gutter={16} align="middle">
           <Col>
-            <span>总利润目标: </span>
+            <span style={{ color: colors.textSecondary, fontWeight: 500 }}>总利润目标: </span>
             <InputNumber
               value={target}
               onChange={setTarget}
@@ -116,74 +122,54 @@ export default function Dashboard() {
       {result && !loading && (
         <>
           {/* 关键指标卡片 */}
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={4}>
-              <Card>
-                <Statistic
-                  title="总目标"
-                  value={result.summary['总目标']}
-                  prefix="¥"
-                  precision={0}
-                />
+          <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+            <Col xs={24} sm={12} md={6} lg={4}>
+              <Card hoverable style={{ borderLeft: `3px solid ${colors.primary}` }}>
+                <Statistic title="总目标" value={result.summary['总目标']} prefix="¥" precision={0} />
               </Card>
             </Col>
-            <Col span={4}>
-              <Card>
+            <Col xs={24} sm={12} md={6} lg={4}>
+              <Card hoverable style={{ borderLeft: `3px solid ${result.summary['净利润'] > 0 ? colors.success : colors.danger}` }}>
                 <Statistic
                   title="净利润"
                   value={result.summary['净利润']}
                   prefix="¥"
                   precision={0}
-                  valueStyle={{ color: result.summary['净利润'] > 0 ? '#3f8600' : '#cf1322' }}
+                  valueStyle={{ color: result.summary['净利润'] > 0 ? colors.success : colors.danger }}
                 />
               </Card>
             </Col>
-            <Col span={3}>
-              <Card>
-                <Statistic
-                  title="净利率"
-                  value={result.summary['净利率']}
-                  valueStyle={{ color: '#1890ff' }}
-                />
+            <Col xs={24} sm={12} md={6} lg={3}>
+              <Card hoverable style={{ borderLeft: `3px solid ${colors.primaryLight}` }}>
+                <Statistic title="净利率" value={result.summary['净利率']} valueStyle={{ color: colors.primaryLight }} />
               </Card>
             </Col>
-            <Col span={3}>
-              <Card>
-                <Statistic
-                  title="门店数"
-                  value={result.summary['门店数']}
-                  prefix={<ShopOutlined />}
-                />
+            <Col xs={24} sm={12} md={6} lg={3}>
+              <Card hoverable style={{ borderLeft: `3px solid ${colors.accent}` }}>
+                <Statistic title="门店数" value={result.summary['门店数']} prefix={<ShopOutlined style={{ color: colors.accent }} />} />
               </Card>
             </Col>
-            <Col span={3}>
-              <Card>
-                <Statistic
-                  title="盈利门店"
-                  value={result.summary['盈利门店']}
-                  prefix={<TrophyOutlined />}
-                  valueStyle={{ color: '#3f8600' }}
-                />
+            <Col xs={24} sm={12} md={6} lg={3}>
+              <Card hoverable style={{ borderLeft: `3px solid ${colors.success}` }}>
+                <Statistic title="盈利门店" value={result.summary['盈利门店']} prefix={<TrophyOutlined />} valueStyle={{ color: colors.success }} />
               </Card>
             </Col>
-            <Col span={3}>
-              <Card>
+            <Col xs={24} sm={12} md={6} lg={3}>
+              <Card hoverable style={{ borderLeft: `3px solid ${result.summary['亏损门店'] > 0 ? colors.danger : colors.success}` }}>
                 <Statistic
                   title="亏损门店"
                   value={result.summary['亏损门店']}
                   prefix={<AlertOutlined />}
-                  valueStyle={{ color: result.summary['亏损门店'] > 0 ? '#cf1322' : '#3f8600' }}
+                  valueStyle={{ color: result.summary['亏损门店'] > 0 ? colors.danger : colors.success }}
                 />
               </Card>
             </Col>
-            <Col span={4}>
-              <Card>
+            <Col xs={24} sm={12} md={6} lg={4}>
+              <Card hoverable style={{ borderLeft: `3px solid ${getRiskColor(result.summary['风险等级']) === 'green' ? colors.success : colors.danger}` }}>
                 <Statistic
                   title="风险等级"
                   value={result.summary['风险等级']}
-                  valueStyle={{
-                    color: result.summary['风险等级'] === 'low' ? '#3f8600' : '#cf1322'
-                  }}
+                  valueStyle={{ color: getRiskColor(result.summary['风险等级']) === 'green' ? colors.success : colors.danger }}
                 />
                 <Tag color={getRiskColor(result.summary['风险等级'])} style={{ marginTop: 8 }}>
                   风险分: {result.summary['风险分']}
@@ -194,12 +180,12 @@ export default function Dashboard() {
 
           {/* 图表 */}
           <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={12}>
+            <Col xs={24} lg={12}>
               <Card>
                 <ReactECharts option={getAllocationPieOption()} style={{ height: 350 }} />
               </Card>
             </Col>
-            <Col span={12}>
+            <Col xs={24} lg={12}>
               <Card>
                 <ReactECharts option={getGrowthBarOption()} style={{ height: 350 }} />
               </Card>
@@ -208,9 +194,9 @@ export default function Dashboard() {
 
           {/* 建议 */}
           {result.recommendations?.length > 0 && (
-            <Card title="风险建议" style={{ marginBottom: 16 }}>
+            <Card title="风险建议" style={{ marginBottom: 16, borderLeft: `3px solid ${colors.warning}` }}>
               {result.recommendations.map((rec, i) => (
-                <p key={i}>{rec}</p>
+                <p key={i} style={{ margin: '6px 0', color: colors.textSecondary }}>{rec}</p>
               ))}
             </Card>
           )}
