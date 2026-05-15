@@ -1,0 +1,243 @@
+import { useState } from 'react'
+import { Card, Row, Col, Button, InputNumber, Spin, message, Table, Tag, Descriptions, List } from 'antd'
+import ReactECharts from 'echarts-for-react'
+import { assessRisk, runMonteCarlo } from '../api'
+
+export default function Risk() {
+  const [loading, setLoading] = useState(false)
+  const [target, setTarget] = useState(10000000)
+  const [result, setResult] = useState(null)
+
+  const handleAssess = async () => {
+    setLoading(true)
+    try {
+      const res = await assessRisk(target)
+      setResult(res.data)
+      message.success('评估完成')
+    } catch (err) {
+      message.error('评估失败: ' + (err.response?.data?.detail || err.message))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getRiskColor = (level) => {
+    const map = { low: 'green', medium: 'orange', high: 'red', critical: 'red' }
+    return map[level] || 'default'
+  }
+
+  // 风险因素雷达图
+  const getRadarOption = () => {
+    if (!result) return {}
+    return {
+      title: { text: '风险因素雷达图', left: 'center' },
+      tooltip: {},
+      radar: {
+        indicator: result.factors.map(f => ({
+          name: f.name,
+          max: 100,
+        })),
+      },
+      series: [{
+        type: 'radar',
+        data: [{
+          value: result.factors.map(f => f.score),
+          name: '风险分数',
+          areaStyle: { color: 'rgba(255, 77, 79, 0.2)' },
+          lineStyle: { color: '#ff4d4f' },
+        }],
+      }],
+    }
+  }
+
+  // 风险因素柱状图
+  const getFactorBarOption = () => {
+    if (!result) return {}
+    return {
+      title: { text: '各风险因素分数', left: 'center' },
+      tooltip: { trigger: 'axis' },
+      xAxis: {
+        type: 'category',
+        data: result.factors.map(f => f.name),
+      },
+      yAxis: { type: 'value', max: 100, name: '风险分' },
+      series: [{
+        type: 'bar',
+        data: result.factors.map(f => ({
+          value: f.score,
+          itemStyle: {
+            color: f.level === 'low' ? '#52c41a' : f.level === 'medium' ? '#faad14' : '#ff4d4f',
+          },
+        })),
+        label: { show: true, position: 'top', formatter: '{c}' },
+      }],
+    }
+  }
+
+  // 蒙特卡洛分布图
+  const getMonteCarloOption = () => {
+    if (!result?.monte_carlo) return {}
+    const mc = result.monte_carlo
+    return {
+      title: { text: '蒙特卡洛利润模拟', left: 'center' },
+      tooltip: {},
+      series: [{
+        type: 'gauge',
+        progress: { show: true },
+        detail: { valueAnimation: true, formatter: '{value}%', fontSize: 20 },
+        data: [{ value: parseFloat(mc.loss_probability), name: '亏损概率' }],
+        axisLine: { lineStyle: { width: 20, color: [[0.1, '#52c41a'], [0.3, '#faad14'], [1, '#ff4d4f']] } },
+        min: 0,
+        max: 50,
+      }],
+    }
+  }
+
+  const factorColumns = [
+    { title: '风险因素', dataIndex: 'name' },
+    {
+      title: '风险分数',
+      dataIndex: 'score',
+      sorter: (a, b) => a.score - b.score,
+      render: v => <span style={{ fontWeight: 'bold' }}>{v}</span>,
+    },
+    {
+      title: '风险等级',
+      dataIndex: 'level',
+      render: v => <Tag color={getRiskColor(v)}>{v}</Tag>,
+      filters: [
+        { text: 'low', value: 'low' },
+        { text: 'medium', value: 'medium' },
+        { text: 'high', value: 'high' },
+        { text: 'critical', value: 'critical' },
+      ],
+      onFilter: (value, record) => record.level === value,
+    },
+    { title: '说明', dataIndex: 'description' },
+    { title: '影响门店数', dataIndex: 'affected_stores', sorter: (a, b) => a.affected_stores - b.affected_stores },
+  ]
+
+  const highRiskColumns = [
+    { title: '门店编码', dataIndex: '门店编码' },
+    { title: '基线', dataIndex: '基线', render: v => `¥${v?.toLocaleString()}` },
+    { title: '目标', dataIndex: '目标', render: v => `¥${v?.toLocaleString()}` },
+    { title: '目标/基线', dataIndex: '目标/基线' },
+    { title: '风险等级', dataIndex: '风险等级', render: v => <Tag color={getRiskColor(v)}>{v}</Tag> },
+    { title: '风险分数', dataIndex: '风险分数', sorter: (a, b) => a['风险分数'] - b['风险分数'] },
+    { title: '建议', dataIndex: '建议' },
+  ]
+
+  return (
+    <div>
+      <Card title="风险评估" style={{ marginBottom: 16 }}>
+        <Row gutter={16} align="middle">
+          <Col>
+            <span>总利润目标: </span>
+            <InputNumber
+              value={target}
+              onChange={setTarget}
+              formatter={v => `¥ ${v}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+              parser={v => v.replace(/¥\s?|(,*)/g, '')}
+              style={{ width: 200 }}
+              step={1000000}
+            />
+          </Col>
+          <Col>
+            <Button type="primary" onClick={handleAssess} loading={loading}>
+              风险评估
+            </Button>
+          </Col>
+        </Row>
+      </Card>
+
+      {loading && <Spin size="large" style={{ display: 'block', margin: '100px auto' }} />}
+
+      {result && !loading && (
+        <>
+          {/* 综合风险 */}
+          <Card style={{ marginBottom: 16 }}>
+            <Descriptions bordered column={4}>
+              <Descriptions.Item label="综合风险分">
+                <span style={{ fontSize: 24, fontWeight: 'bold', color: getRiskColor(result.overall_level) === 'green' ? '#3f8600' : '#cf1322' }}>
+                  {result.overall_score}
+                </span>
+              </Descriptions.Item>
+              <Descriptions.Item label="风险等级">
+                <Tag color={getRiskColor(result.overall_level)} style={{ fontSize: 14, padding: '4px 12px' }}>
+                  {result.overall_level}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="高风险门店">{result.high_risk_stores?.length || 0} 家</Descriptions.Item>
+              <Descriptions.Item label="建议数">{result.recommendations?.length || 0} 条</Descriptions.Item>
+            </Descriptions>
+          </Card>
+
+          {/* 蒙特卡洛 */}
+          {result.monte_carlo && (
+            <Card style={{ marginBottom: 16 }}>
+              <Descriptions bordered column={5}>
+                <Descriptions.Item label="利润均值">¥{result.monte_carlo.profit_mean?.toLocaleString()}</Descriptions.Item>
+                <Descriptions.Item label="利润标准差">¥{result.monte_carlo.profit_std?.toLocaleString()}</Descriptions.Item>
+                <Descriptions.Item label="亏损概率">{result.monte_carlo.loss_probability}</Descriptions.Item>
+                <Descriptions.Item label="VaR95">¥{result.monte_carlo.var_95?.toLocaleString()}</Descriptions.Item>
+                <Descriptions.Item label="CVaR95">¥{result.monte_carlo.cvar_95?.toLocaleString()}</Descriptions.Item>
+              </Descriptions>
+            </Card>
+          )}
+
+          {/* 图表 */}
+          <Row gutter={16} style={{ marginBottom: 16 }}>
+            <Col span={12}>
+              <Card>
+                <ReactECharts option={getRadarOption()} style={{ height: 350 }} />
+              </Card>
+            </Col>
+            <Col span={12}>
+              <Card>
+                <ReactECharts option={getFactorBarOption()} style={{ height: 350 }} />
+              </Card>
+            </Col>
+          </Row>
+
+          {result.monte_carlo && (
+            <Card style={{ marginBottom: 16 }}>
+              <ReactECharts option={getMonteCarloOption()} style={{ height: 300 }} />
+            </Card>
+          )}
+
+          {/* 建议 */}
+          <Card title="风险建议" style={{ marginBottom: 16 }}>
+            <List
+              dataSource={result.recommendations}
+              renderItem={(item) => <List.Item>{item}</List.Item>}
+            />
+          </Card>
+
+          {/* 风险因素明细 */}
+          <Card title="风险因素明细" style={{ marginBottom: 16 }}>
+            <Table
+              dataSource={result.factors}
+              rowKey="name"
+              size="small"
+              pagination={false}
+              columns={factorColumns}
+            />
+          </Card>
+
+          {/* 高风险门店 */}
+          {result.high_risk_stores?.length > 0 && (
+            <Card title="高风险门店明细">
+              <Table
+                dataSource={result.high_risk_stores}
+                rowKey="门店编码"
+                size="small"
+                pagination={{ pageSize: 20 }}
+                columns={highRiskColumns}
+              />
+            </Card>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
