@@ -60,6 +60,9 @@
   .code-block .string { color: #a6e3a1; }
   .code-block .func { color: #89b4fa; }
   .status-done { display: inline-block; background: #d3f9d8; color: #2b8a3e; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+  .tree-block { background: #1e1e2e; color: #cdd6f4; padding: 20px 24px; border-radius: 10px; font-family: "SF Mono", "Fira Code", "Cascadia Code", "JetBrains Mono", monospace; font-size: 13px; line-height: 1.8; overflow-x: auto; margin: 12px 0; white-space: pre; }
+  .tree-block .tree-comment { color: #6c7086; font-style: italic; }
+  .tree-block .tree-emoji { font-style: normal; }
 </style>
 </head>
 <body>
@@ -124,31 +127,34 @@
   </div>
 
   <h3>1.3 项目结构</h3>
-  <div class="table-wrap">
-  <table>
-    <tr><th style="width:280px">路径</th><th>说明</th></tr>
-    <tr><td colspan="2" style="background:#f0f7ff;font-weight:600;color:#4A90D9;padding:8px 14px">src/ — 源代码</td></tr>
-    <tr><td><code>src/agents/orchestrator.py</code></td><td>👔 项目统筹 Agent（Hub），5 Phase 编排</td></tr>
-    <tr><td><code>src/agents/data_agent.py</code></td><td>🔍 数据采集 Agent，StarRocks 7 张源表</td></tr>
-    <tr><td><code>src/agents/baseline_agent.py</code></td><td>📊 基线预估 Agent，时间序列分析</td></tr>
-    <tr><td><code>src/agents/allocation_agent.py</code></td><td>🏪 承压分配 Agent，5 维权重 + 保底线</td></tr>
-    <tr><td><code>src/agents/profit_agent.py</code></td><td>💰 利润测算 Agent，P&L + 下钻</td></tr>
-    <tr><td><code>src/agents/risk_agent.py</code></td><td>🛡️ 风险评估 Agent，可达性 + 均匀度</td></tr>
-    <tr><td><code>src/profit/profit_calculator.py</code></td><td>利润计算器 + StoreProfit 数据类</td></tr>
-    <tr><td><code>src/profit/cost_estimator.py</code></td><td>📐 成本预估器（真实损益 / 默认比例）</td></tr>
-    <tr><td><code>src/profit/profit_report.py</code></td><td>P&L 报告生成器</td></tr>
-    <tr><td><code>src/allocation/</code></td><td>承压分配算法（TargetAllocator + WeightCalculator）</td></tr>
-    <tr><td><code>src/baseline/</code></td><td>基线预估（6 预估器 + 季节指数）</td></tr>
-    <tr><td><code>src/risk/</code></td><td>风险评估框架</td></tr>
-    <tr><td><code>src/data/collectors/starrocks_collector.py</code></td><td>StarRocks 采集器（1084 行，10 个 fetch 方法）</td></tr>
-    <tr><td><code>src/data/collectors/mock_collector.py</code></td><td>Mock 数据采集器（开发测试用）</td></tr>
-    <tr><td><code>src/api/routes/</code></td><td>FastAPI 路由（5 个 API 端点）</td></tr>
-    <tr><td colspan="2" style="background:#f0f7ff;font-weight:600;color:#4A90D9;padding:8px 14px">根目录</td></tr>
-    <tr><td><code>docs/architecture/</code></td><td>架构文档（Agent 图 / 泳道图 / HTML 报告）</td></tr>
-    <tr><td><code>scripts/etl_sql/</code></td><td>8 个 ETL SQL 脚本（覆盖全部数据源）</td></tr>
-    <tr><td><code>scripts/run_real_profit.py</code></td><td>真实数据利润测算脚本</td></tr>
-    <tr><td><code>tests/</code></td><td>159 个单元测试</td></tr>
-  </table>
+  <div class="tree-block">
+profit-forecast/
+├── src/                            <span class="tree-comment">源代码</span>
+│   ├── agents/                     <span class="tree-comment">Agent 编排层</span>
+│   │   ├── orchestrator.py         <span class="tree-emoji">👔</span> 项目统筹（Hub），5 Phase 编排
+│   │   ├── data_agent.py           <span class="tree-emoji">🔍</span> 数据采集，StarRocks 7 张源表
+│   │   ├── baseline_agent.py       <span class="tree-emoji">📊</span> 基线预估，时间序列分析
+│   │   ├── allocation_agent.py     <span class="tree-emoji">🏪</span> 承压分配，5 维权重 + 保底线
+│   │   ├── profit_agent.py         <span class="tree-emoji">💰</span> 利润测算，P&L + 下钻
+│   │   └── risk_agent.py           <span class="tree-emoji">🛡️</span> 风险评估，可达性 + 均匀度
+│   ├── profit/                     <span class="tree-comment">利润测算引擎</span>
+│   │   ├── profit_calculator.py    利润计算器 + StoreProfit 数据类
+│   │   ├── cost_estimator.py       <span class="tree-emoji">📐</span> 成本预估器（真实损益 / 默认比例）
+│   │   └── profit_report.py        P&L 报告生成器
+│   ├── allocation/                 <span class="tree-comment">承压分配算法（TargetAllocator + WeightCalculator）</span>
+│   ├── baseline/                   <span class="tree-comment">基线预估（6 预估器 + 季节指数）</span>
+│   ├── risk/                       <span class="tree-comment">风险评估框架</span>
+│   ├── data/collectors/            <span class="tree-comment">数据采集器</span>
+│   │   ├── starrocks_collector.py  StarRocks 采集器（1084 行，10 个 fetch）
+│   │   └── mock_collector.py       Mock 数据采集器（开发测试用）
+│   └── api/routes/                 <span class="tree-comment">FastAPI 路由（5 个 API 端点）</span>
+├── docs/architecture/              <span class="tree-comment">架构文档（Agent 图 / 泳道图 / HTML 报告）</span>
+├── scripts/
+│   ├── etl_sql/                    <span class="tree-comment">8 个 ETL SQL 脚本（覆盖全部数据源）</span>
+│   └── run_real_profit.py          <span class="tree-comment">真实数据利润测算脚本</span>
+├── tests/                          <span class="tree-comment">159 个单元测试</span>
+├── docker/                         <span class="tree-comment">Docker Compose 配置</span>
+└── run.py                          <span class="tree-comment">应用入口</span>
   </div>
 </div>
 
@@ -191,7 +197,72 @@ graph TD
     style CE fill:#20C997,color:#fff,stroke:#12B886
   </div>
 
-  <h3>2.2 各 Agent 详细职责</h3>
+  <h3>2.2 全流程泳道图（5 Phase 协作时序）</h3>
+  <div class="mermaid">
+sequenceDiagram
+    actor Boss as 👑 公司老板
+    participant PM as 👔 项目统筹<br/>Orchestrator
+    participant DC as 🔍 数据采集<br/>DataAgent
+    participant BL as 📊 基线预估<br/>BaselineAgent
+    participant PA as 🏪 承压分配<br/>AllocationAgent
+    participant CE as 📐 成本预估<br/>CostEstimator
+    participant PC as 💰 利润测算<br/>ProfitAgent
+    participant RA as 🛡️ 风险评估<br/>RiskAgent
+
+    Boss->>PM: 设定公司总利润目标
+
+    rect rgb(255, 248, 230)
+    Note over PM,DC: Phase 1 · 数据采集
+    PM->>DC: 采集全量数据
+    DC->>DC: fetch_stores() 门店主数据
+    DC->>DC: fetch_monthly_metrics() 月度指标
+    DC->>DC: fetch_store_loss() 门店日损益
+    DC->>DC: fetch_daily_target_cost() 日目标
+    DC->>DC: fetch_switch_status() 开关状态
+    DC-->>PM: DataCollectionResult
+    end
+
+    rect rgb(232, 245, 253)
+    Note over PM,BL: Phase 2 · 基线预估
+    PM->>BL: monthly_metrics
+    BL->>BL: 时间序列分析
+    BL->>BL: 异常值剔除 + 季节性调整
+    BL-->>PM: BaselineResult (各店基线 B_i)
+    end
+
+    rect rgb(255, 235, 235)
+    Note over PM,PA: Phase 3 · 承压分配
+    PM->>PA: total_target + baselines + store_profiles
+    PA->>PA: 计算缺口 G = P_total - ΣB_i
+    PA->>PA: 按 5 维权重分配承压额
+    PA->>PA: 约束检查 T_i ≥ B_i × 80%
+    PA-->>PM: AllocationResult (各店目标 T_i)
+    end
+
+    rect rgb(232, 250, 238)
+    Note over PM,PC: Phase 4 · 利润测算
+    PM->>CE: store_loss_df + targets
+    CE->>CE: from_store_loss_data() 构建真实成本
+    CE-->>PM: cost_structures (真实数据)
+    PM->>PC: targets + baselines + cost_structures
+    PC->>PC: 单店利润 = T_i - 真实成本
+    PC->>PC: P&L 表 + 区域/类型下钻
+    PC-->>PM: ProfitResult
+    end
+
+    rect rgb(243, 232, 255)
+    Note over PM,RA: Phase 5 · 风险评估
+    PM->>RA: allocation + profit + store_profiles
+    RA->>RA: 目标可达性评估
+    RA->>RA: 承压均匀度检查
+    RA->>RA: 高风险门店标注
+    RA-->>PM: RiskResult (风险报告)
+    end
+
+    PM-->>Boss: 交付：分配方案 + 利润测算 + P&L + 风险预警
+  </div>
+
+  <h3>2.3 各 Agent 详细职责</h3>
   <div class="table-wrap">
   <table>
     <tr>
