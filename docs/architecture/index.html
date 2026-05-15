@@ -124,31 +124,31 @@
   </div>
 
   <h3>1.3 项目结构</h3>
-  <div class="code-block">
-profit-forecast/
-├── src/
-│   ├── agents/           <span class="comment"># Agent 编排层</span>
-│   │   ├── orchestrator.py      <span class="comment"># 项目统筹 (Hub)</span>
-│   │   ├── data_agent.py        <span class="comment"># 数据采集</span>
-│   │   ├── baseline_agent.py    <span class="comment"># 基线预估</span>
-│   │   ├── allocation_agent.py  <span class="comment"># 承压分配</span>
-│   │   ├── profit_agent.py      <span class="comment"># 利润测算</span>
-│   │   └── risk_agent.py        <span class="comment"># 风险评估</span>
-│   ├── profit/           <span class="comment"># 利润计算引擎</span>
-│   │   ├── profit_calculator.py <span class="comment"># 核心计算器 + StoreProfit</span>
-│   │   ├── cost_estimator.py    <span class="comment"># 成本预估（真实/默认）</span>
-│   │   └── profit_report.py     <span class="comment"># P&L 报告生成</span>
-│   ├── allocation/       <span class="comment"># 承压分配算法</span>
-│   ├── baseline/         <span class="comment"># 基线预估</span>
-│   ├── risk/             <span class="comment"># 风险评估</span>
-│   ├── data/collectors/  <span class="comment"># 数据采集器</span>
-│   │   ├── starrocks_collector.py <span class="comment"># StarRocks（1084 行）</span>
-│   │   └── mock_collector.py      <span class="comment"># Mock 数据</span>
-│   └── api/routes/       <span class="comment"># API 端点</span>
-├── docs/architecture/    <span class="comment"># 架构文档</span>
-├── scripts/              <span class="comment"># ETL + 数据脚本</span>
-│   └── etl_sql/          <span class="comment"># 8 个 SQL 脚本</span>
-└── tests/                <span class="comment"># 159 个测试</span>
+  <div class="table-wrap">
+  <table>
+    <tr><th style="width:280px">路径</th><th>说明</th></tr>
+    <tr><td colspan="2" style="background:#f0f7ff;font-weight:600;color:#4A90D9;padding:8px 14px">src/ — 源代码</td></tr>
+    <tr><td><code>src/agents/orchestrator.py</code></td><td>👔 项目统筹 Agent（Hub），5 Phase 编排</td></tr>
+    <tr><td><code>src/agents/data_agent.py</code></td><td>🔍 数据采集 Agent，StarRocks 7 张源表</td></tr>
+    <tr><td><code>src/agents/baseline_agent.py</code></td><td>📊 基线预估 Agent，时间序列分析</td></tr>
+    <tr><td><code>src/agents/allocation_agent.py</code></td><td>🏪 承压分配 Agent，5 维权重 + 保底线</td></tr>
+    <tr><td><code>src/agents/profit_agent.py</code></td><td>💰 利润测算 Agent，P&L + 下钻</td></tr>
+    <tr><td><code>src/agents/risk_agent.py</code></td><td>🛡️ 风险评估 Agent，可达性 + 均匀度</td></tr>
+    <tr><td><code>src/profit/profit_calculator.py</code></td><td>利润计算器 + StoreProfit 数据类</td></tr>
+    <tr><td><code>src/profit/cost_estimator.py</code></td><td>📐 成本预估器（真实损益 / 默认比例）</td></tr>
+    <tr><td><code>src/profit/profit_report.py</code></td><td>P&L 报告生成器</td></tr>
+    <tr><td><code>src/allocation/</code></td><td>承压分配算法（TargetAllocator + WeightCalculator）</td></tr>
+    <tr><td><code>src/baseline/</code></td><td>基线预估（6 预估器 + 季节指数）</td></tr>
+    <tr><td><code>src/risk/</code></td><td>风险评估框架</td></tr>
+    <tr><td><code>src/data/collectors/starrocks_collector.py</code></td><td>StarRocks 采集器（1084 行，10 个 fetch 方法）</td></tr>
+    <tr><td><code>src/data/collectors/mock_collector.py</code></td><td>Mock 数据采集器（开发测试用）</td></tr>
+    <tr><td><code>src/api/routes/</code></td><td>FastAPI 路由（5 个 API 端点）</td></tr>
+    <tr><td colspan="2" style="background:#f0f7ff;font-weight:600;color:#4A90D9;padding:8px 14px">根目录</td></tr>
+    <tr><td><code>docs/architecture/</code></td><td>架构文档（Agent 图 / 泳道图 / HTML 报告）</td></tr>
+    <tr><td><code>scripts/etl_sql/</code></td><td>8 个 ETL SQL 脚本（覆盖全部数据源）</td></tr>
+    <tr><td><code>scripts/run_real_profit.py</code></td><td>真实数据利润测算脚本</td></tr>
+    <tr><td><code>tests/</code></td><td>159 个单元测试</td></tr>
+  </table>
   </div>
 </div>
 
@@ -285,38 +285,65 @@ graph TD
   <h2>三、数据流（已实施）</h2>
 
   <h3>3.1 核心数据管道</h3>
-  <div class="code-block">
-<span class="keyword">StarRocks 数据源</span>
-    │
-    ├── dws_pub.dws_dim_org_allinfo          <span class="comment">→ 门店主数据</span>
-    ├── proj_facana.dwd_f04_dayone_countbase_pp_new  <span class="comment">→ 月度指标/成本结构</span>
-    ├── proj_facana.ads_fin_fact_day_storeloss_pp    <span class="comment">→ 门店日损益 ⭐核心</span>
-    ├── dws_pub.dws_fact_day_org_target_cost  <span class="comment">→ 日目标数据</span>
-    └── dws_pub.dws_dim_org_on_off            <span class="comment">→ 开关状态</span>
-    │
-    ▼ <span class="func">DataAgent.collect()</span>
-    │
-    ▼ DataCollectionResult
-    │   .stores / .monthly_metrics / .store_loss / ...
-    │
-    ├──▶ <span class="func">BaselineAgent.forecast()</span>     → 基线 B_i
-    ├──▶ <span class="func">AllocationAgent.allocate()</span>   → 目标 T_i
-    │
-    ▼ <span class="func">CostEstimator.from_store_loss_data()</span>
-    │   store_loss_df → cost_structures (真实成本)
-    │
-    ▼ <span class="func">ProfitAgent.calculate(cost_structures=...)</span>
-    │   → ProfitResult
-    │       .summary (门店明细)
-    │       .pnl_table (P&L 利润表)
-    │       .comparison (基线对比)
-    │       .region_drill_down (区域下钻)
-    │       .type_drill_down (类型下钻)
-    │
-    ▼ <span class="func">RiskAgent.assess()</span>
-        → RiskResult
-            .summary_dict (风险汇总)
-            .recommendations (建议措施)
+
+  <p style="font-size:14px;color:#555;margin-bottom:16px;"><strong>数据源层</strong> — StarRocks 实时查询</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th style="width:350px">StarRocks 表</th><th>采集方法</th><th>用途</th></tr>
+    <tr><td><code>dws_pub.dws_dim_org_allinfo</code></td><td>fetch_stores()</td><td>门店主数据</td></tr>
+    <tr><td><code>proj_facana.dwd_f04_dayone_countbase_pp_new</code></td><td>fetch_monthly_metrics()</td><td>月度指标 + 成本结构</td></tr>
+    <tr><td><code>proj_facana.ads_fin_fact_day_storeloss_pp</code></td><td>fetch_store_loss()</td><td><span class="hl">门店日损益（核心）</span></td></tr>
+    <tr><td><code>dws_pub.dws_fact_day_org_target_cost</code></td><td>fetch_daily_target_cost()</td><td>日目标数据</td></tr>
+    <tr><td><code>dws_pub.dws_dim_org_on_off</code></td><td>fetch_switch_status()</td><td>开关状态</td></tr>
+  </table>
+  </div>
+
+  <p style="font-size:14px;color:#555;margin:20px 0 12px;"><strong>处理管道</strong> — 5 Phase 流水线</p>
+  <div class="flow">
+    <div class="flow-step">
+      <span class="num" style="background:#FFA94D">1</span>
+      <div class="content">
+        <div class="title">DataAgent.collect() → DataCollectionResult</div>
+        <div class="desc">从 StarRocks 采集门店、月度指标、日损益、目标、开关状态等全量数据</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="num" style="background:#7B68EE">2</span>
+      <div class="content">
+        <div class="title">BaselineAgent.forecast() → BaselineResult (基线 B<sub>i</sub>)</div>
+        <div class="desc">基于月度指标进行时间序列分析，预估每家门店的自然收入能力</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="num" style="background:#FF6B6B">3</span>
+      <div class="content">
+        <div class="title">AllocationAgent.allocate() → AllocationResult (目标 T<sub>i</sub>)</div>
+        <div class="desc">老板总目标按 5 维权重分配到各店，强店多扛、弱店保底</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="num" style="background:#20C997">4a</span>
+      <div class="content">
+        <div class="title">CostEstimator.from_store_loss_data() → cost_structures</div>
+        <div class="desc">从 ads_fin_fact_day_storeloss_pp 构建真实成本结构（COGS/人工/租金/营销/物流/折旧）</div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="num" style="background:#51CF66">4b</span>
+      <div class="content">
+        <div class="title">ProfitAgent.calculate(cost_structures=...) → ProfitResult</div>
+        <div class="desc">
+          输出：<code>.summary</code> 门店明细 · <code>.pnl_table</code> P&L 利润表 · <code>.comparison</code> 基线对比 · <code>.region_drill_down</code> 区域下钻 · <code>.type_drill_down</code> 类型下钻
+        </div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <span class="num" style="background:#845EF7">5</span>
+      <div class="content">
+        <div class="title">RiskAgent.assess() → RiskResult</div>
+        <div class="desc">目标可达性评估 + 承压均匀度检查 + 高风险门店标注 + 建议措施</div>
+      </div>
+    </div>
   </div>
 
   <h3>3.2 真实成本数据路径</h3>
